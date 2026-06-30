@@ -1,0 +1,64 @@
+src/ui/screens/HomeScreen.jsx
+  s_63bef5427dc4a6::t_6cd95db1973918 2-5,7-74
+  s_63bef5427dc4a6::t_efe1ae4604b6d4 1
+  s_63bef5427dc4a6::t_a0a5309dc4eeef 6
+src/ui/components/StatusBar.jsx
+  s_63bef5427dc4a6::t_50146269463076 1-11
+src/ui/screens/SettingsScreen.jsx
+  s_63bef5427dc4a6::t_322765775d30a5 2-12,14-165
+  s_63bef5427dc4a6::t_5949038dc957c1 1
+  s_63bef5427dc4a6::t_47b0b85515f103 13
+package.json
+  s_63bef5427dc4a6::t_e613f62ca68052 10
+  s_63bef5427dc4a6::t_b864de1338e224 18-19
+  s_63bef5427dc4a6::t_0e1a6fa7296de2 17,20
+src/ui/components/TextInput.jsx
+  s_63bef5427dc4a6::t_aa6892354beb22 1-30
+src/ui/formatters.js
+  s_63bef5427dc4a6::t_857b9ce1f5679e 1-58
+src/cli/session.js
+  s_63bef5427dc4a6::t_5610daf11ec84f 1-2,5-11,15,19
+src/ui/App.jsx
+  s_63bef5427dc4a6::t_af97d838356b0b 62
+  s_63bef5427dc4a6::t_f05c191d2a7211 2-61,63-137
+  s_63bef5427dc4a6::t_db0605303ef288 1
+src/ui/components/SelectList.jsx
+  s_63bef5427dc4a6::t_a12caf703dbc70 1-21
+src/ui/renderApp.jsx
+  s_63bef5427dc4a6::t_3a09da56f2d5de 2,22,26
+  s_63bef5427dc4a6::t_ead1adf801cd22 1,4,7,20,23-24,27-29,45
+  s_63bef5427dc4a6::t_6474160fd1cfe2 3,5,8-19,30-44
+  s_63bef5427dc4a6::t_704af01440b1b4 6
+  s_63bef5427dc4a6::t_6d5dd82fcf8299 21
+  s_63bef5427dc4a6::t_24997100afccfa 25
+src/ui/screens/InfoScreen.jsx
+  s_63bef5427dc4a6::t_b87e6141b185af 1-26
+src/ui/screens/SetupScreen.jsx
+  s_63bef5427dc4a6::t_01b86aec9b892e 1-94
+src/cli/index.js
+  s_63bef5427dc4a6::t_fa4ef5b21028d0 1
+  s_63bef5427dc4a6::t_fb5a0d67f75912 11,105
+src/ui/screens/QuizScreen.jsx
+  s_63bef5427dc4a6::t_6bdb7d09f5cb12 1-420
+src/ui/terminal.js
+  s_63bef5427dc4a6::t_f6cd28f5f40e68 1-2,9,11,16,40
+src/cli/config.js
+  s_63bef5427dc4a6::t_d9086e9378799c 13,43-44
+  s_63bef5427dc4a6::t_a1f07271aa8d6d 1,9-12,14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "7f9c1a978b1d802d9e3e48817b06b3ca5f5c1990",
+  "prompts": {},
+  "sessions": {
+    "s_63bef5427dc4a6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "9ea4880d-6a8b-4a7e-be27-c5f19b7372ff",
+        "model": "composer-2.5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
