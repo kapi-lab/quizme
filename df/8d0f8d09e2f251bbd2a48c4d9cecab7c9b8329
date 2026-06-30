@@ -1,0 +1,81 @@
+README.md
+  h_cecc0e4bd55260 1-2,4,6,12-23
+src/cli/session.js
+  s_9912691aeddb90::t_6535153858c414 135-136,145-146,154
+  s_9912691aeddb90::t_1e7dd1cbb2888a 3-20,27-32,34,36-38,40-134,137-144,147-153,155-159,161,210,219
+  s_c986e805957614::t_4d5f7b51a224e4 21-26,33,35,39
+src/cli/config.js
+  s_cf8769d4d34fa7::t_6effa2b129c731 11-13
+src/cli/index.js
+  s_cf8769d4d34fa7::t_0c2bc2dad619ce 44,80-112,119,135-137,194,200,207
+  s_cf8769d4d34fa7::t_2c681c27d07cb8 42,113-118,120-134
+  s_cf8769d4d34fa7::t_5c3989670c9037 11
+  s_cf8769d4d34fa7::t_5e269760e37dba 45,47,68,75,138,143,146,148,155,165,173,181,208-209,230,234,238,241-242,244-284
+src/ui/terminal.js
+  s_cf8769d4d34fa7::t_68994a40cee577 6,8-30,32-33,35,37-38,44-45,51,55,58
+src/providers/claudeAgent.js
+  s_9912691aeddb90::t_929604a1e79532 1-36,38-52,54,73-99,108,143-145,149-154,156-160,162-164,171-173,179-182,184-193,196,207-210,212-213,218
+  s_9912691aeddb90::t_a159a0646e084a 37,53,55-72,100-107,109-142,146-148,155,161,165,167-170,174-178,183,194-195,197-206,211,214-217
+  s_9ec7d2f3368f0b::t_fbd4a41f9455f0 166
+package.json
+  s_9912691aeddb90::t_49701d26ad45d6 17
+  s_9912691aeddb90::t_90e433736e98d6 8,12,15-16,18
+src/platform/paths.js
+  s_f7952560f5903e::t_6a60409824b3b1 22
+src/sources/claudeSession.js
+  s_f7952560f5903e::t_c317234b44a72a 3
+  s_f7952560f5903e::t_70c8c659f243a5 11,13,15-16,18,24-25,41,43-91,93,123,129,132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "df8d0f8d09e2f251bbd2a48c4d9cecab7c9b8329",
+  "prompts": {},
+  "humans": {
+    "h_cecc0e4bd55260": {
+      "author": "jingyuan <zjingyuan@trip.com>"
+    }
+  },
+  "sessions": {
+    "s_9912691aeddb90": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "39e2679d-5756-4a94-a496-c079dce56474",
+        "model": "arn:aws:bedrock:eu-central-1:133197901387:application-inference-profile/6fy9m3ca6aa5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_9ec7d2f3368f0b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d0d3319e-df2f-4aaf-b607-53ba3ee13e2d",
+        "model": "arn:aws:bedrock:eu-central-1:133197901387:application-inference-profile/6fy9m3ca6aa5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_c986e805957614": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "904ec7ff-ab13-409b-8be5-313e316a1ae7",
+        "model": "arn:aws:bedrock:eu-central-1:133197901387:application-inference-profile/6fy9m3ca6aa5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_cf8769d4d34fa7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c237f83e-26d4-4833-bc7f-2c38e8f7159f",
+        "model": "arn:aws:bedrock:eu-central-1:133197901387:application-inference-profile/6fy9m3ca6aa5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_f7952560f5903e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f1599d4-f1c7-419c-a7df-bbb7f6e5cd39",
+        "model": "arn:aws:bedrock:eu-central-1:133197901387:application-inference-profile/6fy9m3ca6aa5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
