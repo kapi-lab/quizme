@@ -1,4 +1,4 @@
-import { createTerminal } from "../ui/terminal.js";
+import { runInkSetup } from "../ui/renderApp.jsx";
 
 export async function ensureConfig(store) {
   const existing = store.getConfig("user");
@@ -6,22 +6,12 @@ export async function ensureConfig(store) {
     return normalizeConfig(existing);
   }
 
-  const terminal = createTerminal();
-  try {
-    console.log("\nWelcome to QuizMe\n");
-    const language = await terminal.question("Language [1 中文 / 2 English]: ");
-    const level = await terminal.question("Level [1 Junior / 2 Mid / 3 Senior / 4 Staff+]: ");
-    const config = {
-      level: pickLevel(level),
-      language: language.trim() === "1" ? "zh-CN" : "en",
-      dailyGoal: 5,
-      createdAt: new Date().toISOString()
-    };
-    store.setConfig("user", config);
-    return config;
-  } finally {
-    terminal.close();
-  }
+  const config = await runInkSetup({
+    onComplete: (next) => {
+      store.setConfig("user", next);
+    }
+  });
+  return normalizeConfig(config);
 }
 
 export function normalizeConfig(config = {}) {
@@ -29,6 +19,7 @@ export function normalizeConfig(config = {}) {
     level: config.level || "mid",
     language: config.language || "en",
     dailyGoal: Number(config.dailyGoal || 5),
+    soundEnabled: config.soundEnabled === true,
     createdAt: config.createdAt || new Date().toISOString()
   };
 }
@@ -49,3 +40,5 @@ export function isValidLevel(value) {
 export function isValidLanguage(value) {
   return ["zh-CN", "en"].includes(value);
 }
+
+export { pickLevel };

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S node --import tsx
 import fs from "node:fs";
 import path from "node:path";
 import { createStore } from "../storage/index.js";
@@ -8,7 +8,7 @@ import { getLatestClaudeSummary, inspectClaudeSessions } from "../sources/claude
 import { getRepoSummary } from "../sources/repository.js";
 import { getTopicSummary } from "../sources/topic.js";
 import { getAppDataDir } from "../platform/paths.js";
-import { createTerminal, renderHome } from "../ui/terminal.js";
+import { runInkHome } from "../ui/renderApp.jsx";
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -77,7 +77,6 @@ async function main() {
   const store = createStore();
   const command = args._[0];
 
-  // Non-interactive sub-commands bypass the home screen
   if (command === "stats") {
     printStats(store);
     return;
@@ -93,10 +92,8 @@ async function main() {
     return handleInspect(args);
   }
 
-  // First run: language + level setup
   const config = await ensureConfig(store);
 
-  // Direct sub-commands that skip home
   if (command === "review") {
     return handleReview({ store, config });
   }
@@ -105,36 +102,7 @@ async function main() {
     return runQuizSession({ store, config, source });
   }
 
-  // Interactive home screen
-  await runHome({ store, config });
-}
-
-async function runHome({ store, config }) {
-  while (true) {
-    const terminal = createTerminal();
-    const stats = store.getStats();
-    console.log(renderHome(stats, config.language));
-    const raw = (await terminal.question("> ")).trim().toLowerCase();
-    terminal.close();
-
-    if (raw === "1" || raw === "quiz" || raw === "start") {
-      const source = resolveSource({});
-      await runQuizSession({ store, config, source });
-    } else if (raw === "2" || raw === "review") {
-      await handleReview({ store, config });
-    } else if (raw === "3" || raw === "stats") {
-      printStats(store);
-    } else if (raw === "4" || raw === "profile") {
-      printProfile(store);
-    } else if (raw === "5" || raw === "settings") {
-      await handleSettingsInteractive(store, config);
-      config = normalizeConfig(store.getConfig("user", config));
-    } else if (raw === "6" || raw === "exit" || raw === "quit") {
-      return;
-    } else {
-      console.log(config.language === "zh-CN" ? "请输入 1-6。" : "Enter 1-6.");
-    }
-  }
+  await runInkHome({ store, config, resolveSource });
 }
 
 function resolveSource(args) {
@@ -238,47 +206,6 @@ async function handleSettings(store) {
   }
   if (!fs.existsSync(getAppDataDir()) && !process.env.QUIZME_DATA_DIR) {
     console.log("App data directory will be created on first write.");
-  }
-}
-
-async function handleSettingsInteractive(store, config) {
-  const isZh = config.language === "zh-CN";
-  const terminal = createTerminal();
-  try {
-    const LEVELS = ["junior", "mid", "senior", "staff"];
-    console.log([
-      "",
-      isZh ? "=== 设置 ===" : "=== Settings ===",
-      `${isZh ? "语言" : "Language"}: ${config.language}`,
-      `${isZh ? "等级" : "Level"}: ${config.level}`,
-      `${isZh ? "每日目标" : "Daily goal"}: ${config.dailyGoal}`,
-      ""
-    ].join("\n"));
-
-    const langInput = await terminal.question(
-      isZh ? "语言 [1 中文 / 2 English, 回车跳过]: " : "Language [1 zh-CN / 2 en, enter to skip]: "
-    );
-    const levelInput = await terminal.question(
-      isZh ? "等级 [1 Junior / 2 Mid / 3 Senior / 4 Staff+, 回车跳过]: " : "Level [1 Junior / 2 Mid / 3 Senior / 4 Staff+, enter to skip]: "
-    );
-    const goalInput = await terminal.question(
-      isZh ? "每日目标题数 [数字, 回车跳过]: " : "Daily goal [number, enter to skip]: "
-    );
-
-    const next = { ...config };
-    if (langInput.trim() === "1") next.language = "zh-CN";
-    else if (langInput.trim() === "2") next.language = "en";
-
-    const levelIndex = Number(levelInput.trim()) - 1;
-    if (levelIndex >= 0 && levelIndex < LEVELS.length) next.level = LEVELS[levelIndex];
-
-    const goal = Number(goalInput.trim());
-    if (Number.isFinite(goal) && goal >= 1) next.dailyGoal = goal;
-
-    store.setConfig("user", next);
-    console.log(isZh ? "设置已保存。" : "Settings saved.");
-  } finally {
-    terminal.close();
   }
 }
 
