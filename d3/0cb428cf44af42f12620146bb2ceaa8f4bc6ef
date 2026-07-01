@@ -1,0 +1,137 @@
+src/ui/screens/SettingsScreen.tsx
+  s_9c1d7d801b78fb::t_62ac282896317e 3,6,11,141,146-151,160-163,165-166,174,179-184
+test/validator.test.ts
+  s_bb9475263629c0::t_40f8977b022190 1-79
+src/version.ts
+  s_9c1d7d801b78fb::t_7eefadb5f83e33 1-5
+src/ui/components/Clawd.tsx
+  s_9c1d7d801b78fb::t_b062fc5b0f5820 1-66
+package.json
+  s_bb9475263629c0::t_2e9c19657226d3 11
+  h_cecc0e4bd55260 28-29
+src/ui/screens/SetupScreen.tsx
+  s_9c1d7d801b78fb::t_3e5b98ff19d045 3,6,11,70-73,75-76,79-83,93-96,101-106
+src/ui/renderApp.tsx
+  s_40c26cf34b2d13::t_0d8a580d57cfd8 40
+  s_40c26cf34b2d13::t_91afba76530ef0 22
+src/ui/components/Feed.tsx
+  s_9c1d7d801b78fb::t_468c18555c620c 1-93
+src/ui/components/AppHeader.tsx
+  s_9c1d7d801b78fb::t_88986652e8de5b 1-21
+src/generation/validator.ts
+  s_bb9475263629c0::t_644b24d50a9e4b 1-150
+src/storage/sqlite.ts
+  s_bb9475263629c0::t_ce8b01987157f4 313-369,375
+  s_bb9475263629c0::t_188e7eac29525c 4-11
+  s_bb9475263629c0::t_f40564c62b7f5f 65-70
+src/ui/screens/QuizScreen.tsx
+  s_9c1d7d801b78fb::t_8d2c0373a03368 317-318,320-321,330-331,335-336
+  s_bb9475263629c0::t_0bc175565365d8 89-90,96-97
+  s_9c1d7d801b78fb::t_b770f4bf9eebf3 355-356,358-359,362-371,373-379,381-386
+  s_9c1d7d801b78fb::t_32e50ff0e4b86b 389-392,395,398-405,410-417,422-423,426-428,434-437,439,441-442,445-447,451,460-462,466-472,476-478,481
+  s_9c1d7d801b78fb::t_3c5ce4f31b5bea 5,10
+src/ui/components/WelcomeBanner.tsx
+  s_9c1d7d801b78fb::t_af68304bd26075 2-4,6-10,15,17-30,32-49,51,62,64,66-107,109-148
+  s_9c1d7d801b78fb::t_1858c59a2c2193 1,5,11-14,16,31,50,52-61,63,65,108,149-151
+docs/product.md
+  s_bb9475263629c0::t_4388f8c4904a24 238
+  s_bb9475263629c0::t_a2ead4bdd422ab 293
+  s_bb9475263629c0::t_eefeacf8919fc1 32
+  s_bb9475263629c0::t_04ae3f8a05b23c 3
+  s_bb9475263629c0::t_c055f9b3856b34 123
+src/ui/screens/HomeScreen.tsx
+  s_9c1d7d801b78fb::t_b2cecd1263d3bd 2,6
+  s_9c1d7d801b78fb::t_a942d4af313e17 37-40,76-80
+  s_9c1d7d801b78fb::t_868a2262b6ef7a 5
+  s_9c1d7d801b78fb::t_6a607987d5ea38 70
+src/ui/screens/InfoScreen.tsx
+  s_9c1d7d801b78fb::t_cb44695557b50f 2,4,25,27-38,42
+src/ui/components/SelectList.tsx
+  s_9c1d7d801b78fb::t_586470ea32fe9f 2,19-35,38
+src/providers/claudeAgent.ts
+  s_bb9475263629c0::t_751593f90d08b6 4
+  s_bb9475263629c0::t_4c32af9797a523 115-118
+  s_bb9475263629c0::t_c89e3e624f6ebd 5-12
+  s_bb9475263629c0::t_fb773158aa05d5 68,70-94,101-103,109-110,120-121,125-128
+  s_bb9475263629c0::t_d8383f7f9d98da 286-287,294-295,298
+  s_bb9475263629c0::t_8150ff21250671 325
+  s_bb9475263629c0::t_da0aecdd46db56 227
+  s_bb9475263629c0::t_b467445e970511 60,65,67
+  s_6925ab386e122d::t_e8c70670004c17 69
+src/cli/index.ts
+  s_bb9475263629c0::t_5fd3c41243d569 4-5,14,26,28-32,61-62,65-78,100-109,116-124
+  s_bb9475263629c0::t_3f39b7738ef93c 238-255,257,264-268,273-281,284-294,296-297,299-310,312-324,326-349
+  s_6925ab386e122d::t_e600717a1137a0 125-126
+src/ui/components/FeedColumn.tsx
+  s_9c1d7d801b78fb::t_72f51cd3f9e25a 1-28
+docs/technical.md
+  s_bb9475263629c0::t_a848df3bbca782 136-138
+  s_bb9475263629c0::t_fed0e06c4ece81 3
+  s_bb9475263629c0::t_4175da64edd913 59-60,73,75-76,78-92
+  s_bb9475263629c0::t_b203b3849d1a13 108-110,112-113,116
+  s_bb9475263629c0::t_16d80d563576f8 20,25-29
+src/ui/components/TextInput.tsx
+  s_9c1d7d801b78fb::t_49a4db2180b17f 2,35-39
+src/ui/components/Divider.tsx
+  s_9c1d7d801b78fb::t_0ecc1f619dd206 1-16
+src/ui/textUtils.ts
+  s_9c1d7d801b78fb::t_684dd0e31fbf40 1-14
+src/ui/logoLayout.ts
+  s_9c1d7d801b78fb::t_232f0582765ccf 1-62
+src/ui/components/StatusBar.tsx
+  s_9c1d7d801b78fb::t_61ce6df4e619d7 2,5-8,10-16
+src/types.ts
+  s_bb9475263629c0::t_8e5a2915542e46 6,21
+  s_bb9475263629c0::t_6306efdb6e366c 66-74
+  s_bb9475263629c0::t_b8047edbc0a908 116-119,124-125,127-128
+src/generation/schema.ts
+  s_bb9475263629c0::t_4519fb5f32e9e5 12-15,17,26,32,37,45
+src/ui/theme.ts
+  s_9c1d7d801b78fb::t_3b4418dea2600f 1-6,9-30
+  s_9c1d7d801b78fb::t_fab6c44c5c6224 7-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "d30cb428cf44af42f12620146bb2ceaa8f4bc6ef",
+  "prompts": {},
+  "humans": {
+    "h_cecc0e4bd55260": {
+      "author": "jingyuan <zjingyuan@trip.com>"
+    }
+  },
+  "sessions": {
+    "s_40c26cf34b2d13": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "355bccdc-9202-4cf5-8dbb-70ecf0e4f031",
+        "model": "composer-2.5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_6925ab386e122d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "07c01033-ea78-4216-81fc-64e5c7215471",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_9c1d7d801b78fb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d4658ebf-abad-41c7-9615-86563f984fe7",
+        "model": "composer-2.5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_bb9475263629c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "00d32f22-6978-422d-97f3-207b458be273",
+        "model": "arn:aws:bedrock:us-west-2:133197901387:application-inference-profile/ypvzpmevzxdl"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
