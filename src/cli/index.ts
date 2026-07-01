@@ -1,6 +1,8 @@
 #!/usr/bin/env -S node --import tsx
 import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import { createStore } from "../storage/index.js";
 import { ensureConfig, isValidLanguage, isValidLevel, normalizeConfig } from "./config.js";
 import { runQuizSession, printProfile, printStats } from "./session.js";
@@ -9,7 +11,7 @@ import { getRepoSummary } from "../sources/repository.js";
 import { getTopicSummary } from "../sources/topic.js";
 import { getAppDataDir } from "../platform/paths.js";
 import { runInkHome } from "../ui/renderApp.js";
-import type { QuizQuestion, SourceSummary, Store, UserConfig } from "../types.js";
+import type { ProfilePreferenceKind, QuizQuestion, SourceSummary, Store, UserConfig } from "../types.js";
 
 type CliArgs = {
   _: string[];
@@ -21,7 +23,13 @@ type CliArgs = {
   resetHistory?: boolean;
   resetProfile?: boolean;
   resetWhy?: boolean;
+  resetQuestions?: boolean;
   all?: boolean;
+  yes?: boolean;
+  prefer?: string;
+  suppress?: string;
+  markKnown?: string;
+  removePref?: string;
   help?: boolean;
 };
 
@@ -50,8 +58,24 @@ function parseArgs(argv: string[]): CliArgs {
       args.resetProfile = true;
     } else if (token === "--reset-why") {
       args.resetWhy = true;
+    } else if (token === "--reset-questions") {
+      args.resetQuestions = true;
     } else if (token === "--all") {
       args.all = true;
+    } else if (token === "--yes" || token === "-y") {
+      args.yes = true;
+    } else if (token === "--prefer") {
+      args.prefer = argv[i + 1];
+      i += 1;
+    } else if (token === "--suppress") {
+      args.suppress = argv[i + 1];
+      i += 1;
+    } else if (token === "--mark-known") {
+      args.markKnown = argv[i + 1];
+      i += 1;
+    } else if (token === "--remove-pref") {
+      args.removePref = argv[i + 1];
+      i += 1;
     } else if (token === "--help" || token === "-h") {
       args.help = true;
     } else {
@@ -73,13 +97,31 @@ Usage:
   quizme stats
   quizme profile
   quizme settings --language zh-CN --level senior --daily-goal 8
-  quizme settings --reset-history
-  quizme settings --reset-profile
-  quizme settings --reset-why
+  quizme settings --prefer <tag>       # weight tag up
+  quizme settings --suppress <tag>     # weight tag down
+  quizme settings --mark-known <tag>   # user already knows this tag
+  quizme settings --remove-pref <tag>
+  quizme settings --reset-history     # delete attempts + review queue
+  quizme settings --reset-profile     # delete signals + preferences
+  quizme settings --reset-why         # delete why threads
+  quizme settings --reset-questions   # delete cached question bank
+  quizme settings --all               # wipe every table
+  quizme settings ... --yes           # skip confirmation
   quizme review
   quizme inspect-sources
   quizme inspect-sources --session /path/to/session.jsonl
   `);
+}
+
+async function confirm(message: string, skip: boolean): Promise<boolean> {
+  if (skip) return true;
+  const rl = readline.createInterface({ input, output });
+  try {
+    const answer = (await rl.question(`${message} Type "yes" to continue: `)).trim().toLowerCase();
+    return answer === "yes" || answer === "y";
+  } finally {
+    rl.close();
+  }
 }
 
 async function main() {
@@ -193,34 +235,118 @@ async function handleSettings(store: Store) {
     store.setConfig("user", next);
   }
 
+  const prefKindMap: Array<{ arg?: string; kind: ProfilePreferenceKind }> = [
+    { arg: args.prefer, kind: "boost" },
+    { arg: args.suppress, kind: "suppress" },
+    { arg: args.markKnown, kind: "known" }
+  ];
+  for (const { arg, kind } of prefKindMap) {
+    if (arg) {
+      const tag = arg.trim();
+      if (!tag) throw new Error("Preference tag cannot be empty.");
+      store.upsertProfilePreference({ tag, kind });
+      console.log(`Preference saved: ${tag} → ${kind}`);
+    }
+  }
+  if (args.removePref) {
+    store.deleteProfilePreference(args.removePref.trim());
+    console.log(`Preference removed: ${args.removePref}`);
+  }
+
   const user = normalizeConfig(store.getConfig("user", current) ?? undefined);
+  const prefs = store.listProfilePreferences();
   console.log([
     `App data dir: ${getAppDataDir()}`,
     `Language: ${user.language}`,
     `Level: ${user.level}`,
     `Daily goal: ${user.dailyGoal}`,
     "",
+    "Preferences:",
+    prefs.length
+      ? prefs.map((p) => `  ${p.tag} → ${p.kind}`).join("\n")
+      : "  (none)",
+    "",
     "Use one of:",
     "  quizme settings --language zh-CN",
     "  quizme settings --level senior",
     "  quizme settings --daily-goal 8",
-    "  quizme settings --reset-history",
-    "  quizme settings --reset-profile",
-    "  quizme settings --reset-why"
+    "  quizme settings --prefer react",
+    "  quizme settings --suppress css-trivia",
+    "  quizme settings --mark-known git-basics",
+    "  quizme settings --remove-pref react",
+    "  quizme settings --reset-history      (deletes attempts + review queue)",
+    "  quizme settings --reset-profile      (deletes profile signals + preferences)",
+    "  quizme settings --reset-why          (deletes why threads)",
+    "  quizme settings --reset-questions    (deletes cached question bank)",
+    "  quizme settings --all                (wipes ALL local data)"
   ].join("\n"));
 
-  if (args.all || args.resetHistory) {
+  const skipConfirm = args.yes === true;
+
+  if (args.all) {
+    const ok = await confirm(
+      "This will DELETE all attempts, questions, profile signals, preferences, why threads, review items, and game progress.",
+      skipConfirm
+    );
+    if (!ok) {
+      console.log("Aborted.");
+      return;
+    }
     store.clearAll();
-    console.log("Quiz history cleared.");
+    console.log("All QuizMe local data cleared.");
+    return;
   }
-  if (args.all || args.resetProfile) {
-    store.exec("DELETE FROM profile_signals;");
-    console.log("Profile signals cleared.");
+
+  if (args.resetHistory) {
+    const ok = await confirm(
+      "This will DELETE all attempts and the review queue. Profile signals, preferences, and cached questions are kept.",
+      skipConfirm
+    );
+    if (!ok) {
+      console.log("Aborted history reset.");
+    } else {
+      store.clearAttemptHistory();
+      console.log("Attempt history and review queue cleared.");
+    }
   }
-  if (args.all || args.resetWhy) {
-    store.clearWhyThreads();
-    console.log("Why threads cleared.");
+
+  if (args.resetProfile) {
+    const ok = await confirm(
+      "This will DELETE profile signals and preferences. Answer history is kept.",
+      skipConfirm
+    );
+    if (!ok) {
+      console.log("Aborted profile reset.");
+    } else {
+      store.clearProfileSignals();
+      store.clearProfilePreferences();
+      console.log("Profile signals and preferences cleared.");
+    }
   }
+
+  if (args.resetWhy) {
+    const ok = await confirm("This will DELETE all why threads.", skipConfirm);
+    if (!ok) {
+      console.log("Aborted why reset.");
+    } else {
+      store.clearWhyThreads();
+      console.log("Why threads cleared.");
+    }
+  }
+
+  if (args.resetQuestions) {
+    const ok = await confirm(
+      "This will DELETE the cached question bank. Attempts referencing these questions remain but their payloads will be gone.",
+      skipConfirm
+    );
+    if (!ok) {
+      console.log("Aborted question bank reset.");
+    } else {
+      store.clearQuestionBank();
+      console.log("Question bank cleared.");
+    }
+  }
+
   if (!fs.existsSync(getAppDataDir()) && !process.env.QUIZME_DATA_DIR) {
     console.log("App data directory will be created on first write.");
   }

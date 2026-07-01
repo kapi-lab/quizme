@@ -1,6 +1,6 @@
 # QuizMe 技术文档
 
-更新日期：2026-06-30
+更新日期：2026-07-02
 
 ## 运行时与包形态
 
@@ -17,16 +17,16 @@ npx quizme
 
 - Node.js 20+
 - ESM
-- 架构上兼容 TypeScript，即使当前 MVP 实现仍是 JavaScript
+- 使用 TypeScript 实现（`.ts` / `.tsx`），通过 `tsx` 直接运行源码
 - 本地优先存储
 
 候选依赖：
 
-- CLI 命令路由：`commander` 或类似库
-- 交互式终端 UI：`ink`、`enquirer` 或更简单的 prompt 层
-- 模型输出校验：`zod` 或等价 schema 校验工具
-- 外部进程调用：`execa`
-- 本地存储：SQLite
+- CLI 命令路由：手写 argv 解析或 `commander`（当前使用手写解析）
+- 交互式终端 UI：`ink` + React（当前实现）
+- 模型输出校验：手写运行时校验器（`generation/validator.ts`），必要时再引入 `zod`
+- 外部进程调用：`node:child_process`（`spawn` / `execFileSync`）
+- 本地存储：SQLite（当前通过 `sqlite3` CLI，未来评估 `better-sqlite3` / `node:sqlite`）
 
 ## 命令面
 
@@ -56,39 +56,40 @@ quizme inspect-sources
 src/
   cli/
     index.ts
-    commands/
-      play.ts
-      config.ts
-      settings.ts
-      stats.ts
-      profile.ts
-      dashboard.ts
+    session.ts
+    config.ts
   sources/
     claudeSession.ts
     repository.ts
     topic.ts
   generation/
-    prompt.ts
     schema.ts
     validator.ts
     dedupe.ts
   providers/
     claudeAgent.ts
-    customModel.ts
   platform/
     paths.ts
-    terminal.ts
-    executables.ts
-  quiz/
-    session.ts
-    scoring.ts
-    review.ts
+    fs.ts
   storage/
-    db.ts
-    migrations.ts
+    index.ts
+    sqlite.ts
   ui/
-    terminal.ts
-    charts.ts
+    App.tsx
+    renderApp.tsx
+    formatters.ts
+    screens/
+      HomeScreen.tsx
+      QuizScreen.tsx
+      SettingsScreen.tsx
+      SetupScreen.tsx
+      InfoScreen.tsx
+    components/
+      SelectList.tsx
+      TextInput.tsx
+      StatusBar.tsx
+      ...
+  types.ts
 ```
 
 ## 数据源
@@ -104,15 +105,15 @@ src/
 
 规则：
 
-- 优先当前项目 `.claude`。
-- 其次检查用户级 `.claude`。
-- 支持显式 `--session <path>`。
+- 默认扫描用户级 `~/.claude/projects/`，按 mtime 选择全局最新一次会话（`*.jsonl`）。
+- 之所以采用全局最新而非当前 `cwd/.claude`：Claude Code 会话真实存储在 `~/.claude/projects/<slug>/*.jsonl` 中，用户在等待间隙从任意目录启动 QuizMe 时应立即拿到最近一次会话上下文，无需切目录。
+- 支持显式 `--session <path>` 覆盖默认扫描。
 - 不假设 Claude Code 内部格式稳定。
-- 提供 `quizme inspect-sources` 用于诊断。
-- 如果 `.claude` 缺失、不可读或无法解析，返回清晰错误。
+- 提供 `quizme inspect-sources` 用于诊断（展示扫描目录、命中文件、preview）。
+- 如果 `~/.claude/projects/` 缺失、无 `.jsonl`、不可读或无法解析，返回清晰错误。
 - 不静默 fallback 到 repo/topic mode。
 
-所有 Claude Code 路径和解析假设必须隔离在 adapter 内。如果 Claude Code 变更存储格式，可以替换 adapter。
+所有 Claude Code 路径和解析假设必须隔离在 adapter (`src/sources/claudeSession.ts`) 内。如果 Claude Code 变更存储格式，可以替换 adapter。
 
 ## 跨平台要求
 
@@ -132,9 +133,9 @@ QuizMe 目标支持 macOS、Linux、Windows。
 
 会话查找：
 
-- 当前项目：`process.cwd()/.claude`
-- macOS / Linux 用户会话根目录：`$HOME/.claude`
-- Windows 用户会话根目录：`%USERPROFILE%\.claude`
+- macOS / Linux 用户会话根目录：`$HOME/.claude/projects/`
+- Windows 用户会话根目录：`%USERPROFILE%\.claude\projects\`
+- 显式覆盖：`--session <path>`
 
 App data 目录：
 

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { AppHeader } from "../components/AppHeader.js";
 import { SelectList } from "../components/SelectList.js";
 import { StatusBar } from "../components/StatusBar.js";
+import { hintLine, theme } from "../theme.js";
 import type { Language, Level, UserConfig } from "../../types.js";
 
 const LEVELS = [
   { id: "junior", label: "Junior" },
-  { id: "mid", label: "Mid" },
+  { id: "mid", label: "Mid-level" },
   { id: "senior", label: "Senior" },
   { id: "staff", label: "Staff+" }
 ] as const satisfies ReadonlyArray<{ id: Level; label: string }>;
@@ -65,15 +67,20 @@ export function SetupScreen({ onComplete }: { onComplete: (config: UserConfig) =
   if (step === "language") {
     return (
       <Box flexDirection="column">
-        <Text bold>Welcome to QuizMe</Text>
-        <Text>{isZh ? "选择语言:" : "Choose language:"}</Text>
+        <AppHeader
+          title="QuizMe"
+          subtitle={isZh ? "首次设置 · 选择语言" : "First run · Choose language"}
+        />
         <Box marginTop={1} flexDirection="column">
-          <Text>1. 中文</Text>
-          <Text>2. English</Text>
+          <Text color={theme.text}>1. 中文</Text>
+          <Text color={theme.text}>2. English</Text>
         </Box>
         <StatusBar
-          status={isZh ? "首次设置 · 语言" : "First run · Language"}
-          hints={isZh ? "输入 1 或 2 · Enter 默认 English" : "Type 1 or 2 · Enter for English"}
+          status={isZh ? "语言" : "Language"}
+          hints={hintLine([
+            isZh ? "输入 1 或 2" : "type 1 or 2",
+            isZh ? "Enter 默认 English" : "enter for English"
+          ])}
         />
       </Box>
     );
@@ -83,13 +90,20 @@ export function SetupScreen({ onComplete }: { onComplete: (config: UserConfig) =
 
   return (
     <Box flexDirection="column">
-      <Text bold>{isZh ? "选择等级" : "Choose level"}</Text>
+      <AppHeader
+        title="QuizMe"
+        subtitle={isZh ? "首次设置 · 选择等级" : "First run · Choose level"}
+      />
       <Box marginTop={1} flexDirection="column">
         <SelectList items={levelItems} selectedIndex={levelIndex} showIndex />
       </Box>
       <StatusBar
-        status={isZh ? "首次设置 · 等级" : "First run · Level"}
-        hints={isZh ? "↑↓ 选择 · Enter 确认 · 1-4 快捷选择" : "↑↓ select · Enter confirm · 1-4 shortcut"}
+        status={isZh ? "等级" : "Level"}
+        hints={hintLine([
+          isZh ? "↑↓ 选择" : "↑↓ select",
+          isZh ? "Enter 确认" : "enter confirm",
+          isZh ? "1-4 快捷" : "1-4 shortcut"
+        ])}
       />
     </Box>
   );

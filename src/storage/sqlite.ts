@@ -1,7 +1,14 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { ensureDir } from "../platform/fs.js";
-import type { ProfileSignal, QuizQuestion, Stats, WhyTurn } from "../types.js";
+import type {
+  ProfilePreference,
+  ProfilePreferenceKind,
+  ProfileSignal,
+  QuizQuestion,
+  Stats,
+  WhyTurn
+} from "../types.js";
 
 function shellQuote(value: unknown): string {
   return `'${String(value).replace(/'/g, "''")}'`;
@@ -53,6 +60,12 @@ export class SqliteStore {
         trend TEXT NOT NULL,
         correct_count INTEGER NOT NULL,
         wrong_count INTEGER NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS profile_preferences (
+        tag TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        note TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
       CREATE TABLE IF NOT EXISTS why_threads (
@@ -297,11 +310,69 @@ export class SqliteStore {
     `);
   }
 
+  listProfilePreferences(): ProfilePreference[] {
+    const output = this.exec(`
+      SELECT tag, kind, note, updated_at
+      FROM profile_preferences
+      ORDER BY datetime(updated_at) DESC;
+    `);
+    if (!output) return [];
+    return output.split("\n").filter(Boolean).map((line) => {
+      const [tag, kind, note, updatedAt] = line.split("|");
+      return {
+        tag,
+        kind: kind as ProfilePreferenceKind,
+        note: note || undefined,
+        updatedAt
+      };
+    });
+  }
+
+  upsertProfilePreference(pref: { tag: string; kind: ProfilePreferenceKind; note?: string }): void {
+    this.exec(`
+      INSERT INTO profile_preferences(tag, kind, note, updated_at)
+      VALUES (
+        ${shellQuote(pref.tag)},
+        ${shellQuote(pref.kind)},
+        ${shellQuote(pref.note ?? "")},
+        datetime('now')
+      )
+      ON CONFLICT(tag) DO UPDATE SET
+        kind=excluded.kind,
+        note=excluded.note,
+        updated_at=excluded.updated_at;
+    `);
+  }
+
+  deleteProfilePreference(tag: string): void {
+    this.exec(`DELETE FROM profile_preferences WHERE tag=${shellQuote(tag)};`);
+  }
+
+  clearProfilePreferences(): void {
+    this.exec("DELETE FROM profile_preferences;");
+  }
+
+  clearAttemptHistory(): void {
+    this.exec(`
+      DELETE FROM attempts;
+      DELETE FROM review_items;
+    `);
+  }
+
+  clearProfileSignals(): void {
+    this.exec("DELETE FROM profile_signals;");
+  }
+
+  clearQuestionBank(): void {
+    this.exec("DELETE FROM questions;");
+  }
+
   clearAll(): void {
     this.exec(`
       DELETE FROM attempts;
       DELETE FROM questions;
       DELETE FROM profile_signals;
+      DELETE FROM profile_preferences;
       DELETE FROM why_threads;
       DELETE FROM review_items;
     `);

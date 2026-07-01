@@ -1,4 +1,5 @@
 import { Box, Text } from "ink";
+import { symbols, theme } from "../theme.js";
 
 type SelectItem = { id?: string; label: string };
 
@@ -15,10 +16,26 @@ export function SelectList({
     <Box flexDirection="column">
       {items.map((item, index) => {
         const selected = index === selectedIndex;
-        const prefix = showIndex ? `${index + 1}. ` : selected ? "❯ " : "  ";
+        const prefix = showIndex ? `${index + 1}. ` : selected ? `${symbols.pointer} ` : `${symbols.pointerIdle} `;
+
+        if (selected) {
+          return (
+            <Box key={item.id ?? item.label}>
+              <Text
+                backgroundColor={theme.selectionBg}
+                color={theme.text}
+                bold
+              >
+                {prefix}
+                {item.label}
+              </Text>
+            </Box>
+          );
+        }
+
         return (
           <Box key={item.id ?? item.label}>
-            <Text color={selected ? "cyan" : undefined} bold={selected}>
+            <Text color={theme.text}>
               {prefix}
               {item.label}
             </Text>

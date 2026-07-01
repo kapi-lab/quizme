@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
-import { Box, Text, useInput } from "ink";
+import { Box, useInput } from "ink";
 import { SelectList } from "../components/SelectList.js";
 import { StatusBar } from "../components/StatusBar.js";
+import { WelcomeBanner } from "../components/WelcomeBanner.js";
+import { hintLine } from "../theme.js";
 import type { SoundPlayer, Stats, UserConfig } from "../../types.js";
 
 export type HomeAction = "quiz" | "review" | "stats" | "profile" | "settings" | "exit";
@@ -32,10 +34,10 @@ export function HomeScreen({
         { id: "exit", label: "退出" }
       ]
     : [
-        { id: "quiz", label: "Start Quiz" },
-        { id: "review", label: "Review" },
-        { id: "stats", label: "Stats" },
-        { id: "profile", label: "Profile" },
+        { id: "quiz", label: "Start quiz" },
+        { id: "review", label: "Review mistakes" },
+        { id: "stats", label: "View stats" },
+        { id: "profile", label: "View profile" },
         { id: "settings", label: "Settings" },
         { id: "exit", label: "Exit" }
       ];
@@ -63,24 +65,19 @@ export function HomeScreen({
     }
   });
 
-  const streak = stats ? stats.currentStreak : 0;
-  const today = stats ? stats.todayCount : 0;
-  const accuracy = stats ? `${(stats.accuracy * 100).toFixed(0)}%` : "—";
-
   return (
     <Box flexDirection="column">
-      <Text bold>=== QuizMe ===</Text>
-      <Text>
-        {isZh
-          ? `连续: ${streak} 天  今日: ${today} 题  准确率: ${accuracy}`
-          : `Streak: ${streak} days  Today: ${today}  Accuracy: ${accuracy}`}
-      </Text>
+      <WelcomeBanner config={config} stats={stats} />
       <Box marginTop={1} flexDirection="column">
         <SelectList items={items} selectedIndex={selectedIndex} showIndex />
       </Box>
       <StatusBar
         status={isZh ? "主菜单" : "Home"}
-        hints={isZh ? "↑↓ 选择 · Enter 确认 · 1-6 快捷选择" : "↑↓ select · Enter confirm · 1-6 shortcut"}
+        hints={hintLine([
+          isZh ? "↑↓ 选择" : "↑↓ select",
+          isZh ? "Enter 确认" : "enter confirm",
+          isZh ? "1-6 快捷" : "1-6 shortcut"
+        ])}
       />
     </Box>
   );

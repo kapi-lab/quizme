@@ -3,6 +3,7 @@ export type Level = "junior" | "mid" | "senior" | "staff";
 export type QuizMode = "mixed" | "review";
 
 export type SourceType = "manual" | "topic" | "repo" | "claude_session";
+export type QuestionSourceMode = "contextual" | "adjacent" | "interview_style";
 
 export interface SourceSummary {
   sourceType: SourceType;
@@ -17,6 +18,7 @@ export interface Choice {
 
 export interface QuizQuestion {
   id: string;
+  sourceMode: QuestionSourceMode;
   topic: string;
   difficulty: number;
   question: string;
@@ -61,6 +63,15 @@ export interface ProfileSignal {
   wrongCount: number;
 }
 
+export type ProfilePreferenceKind = "boost" | "suppress" | "known";
+
+export interface ProfilePreference {
+  tag: string;
+  kind: ProfilePreferenceKind;
+  note?: string;
+  updatedAt: string;
+}
+
 export interface Stats {
   attemptsTotal: number;
   attemptsCorrect: number;
@@ -102,10 +113,17 @@ export interface Store {
   }): void;
   updateSignal(tag: string, wasCorrect: boolean): void;
   getProfileSignals(): ProfileSignal[];
+  listProfilePreferences(): ProfilePreference[];
+  upsertProfilePreference(pref: Omit<ProfilePreference, "updatedAt">): void;
+  deleteProfilePreference(tag: string): void;
+  clearProfilePreferences(): void;
   getStats(): Stats;
   upsertReviewItem(questionId: string, resolved: boolean): void;
   listReviewQuestionIds(limit?: number): string[];
   appendWhyThread(questionId: string, turns: WhyTurn[]): void;
-  clearAll(): void;
+  clearAttemptHistory(): void;
+  clearProfileSignals(): void;
   clearWhyThreads(): void;
+  clearQuestionBank(): void;
+  clearAll(): void;
 }

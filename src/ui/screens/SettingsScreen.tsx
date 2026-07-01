@@ -1,12 +1,14 @@
 import { useRef, useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { AppHeader } from "../components/AppHeader.js";
 import { SelectList } from "../components/SelectList.js";
 import { StatusBar } from "../components/StatusBar.js";
+import { hintLine, theme } from "../theme.js";
 import type { Level, SoundPlayer, UserConfig } from "../../types.js";
 
 const LEVELS = [
   { id: "junior", label: "Junior" },
-  { id: "mid", label: "Mid" },
+  { id: "mid", label: "Mid-level" },
   { id: "senior", label: "Senior" },
   { id: "staff", label: "Staff+" }
 ] as const satisfies ReadonlyArray<{ id: Level; label: string }>;
@@ -136,13 +138,17 @@ export function SettingsScreen({
     const levelItems = LEVELS.map((l) => ({ id: l.id, label: l.label }));
     return (
       <Box flexDirection="column">
-        <Text bold>{isZh ? "选择等级" : "Choose level"}</Text>
+        <AppHeader title="QuizMe" subtitle={isZh ? "设置 · 等级" : "Settings · Level"} />
         <Box marginTop={1}>
           <SelectList items={levelItems} selectedIndex={levelIndex} showIndex />
         </Box>
         <StatusBar
-          status={isZh ? "设置 · 等级" : "Settings · Level"}
-          hints={isZh ? "↑↓ 选择 · Enter 确认 · Esc 返回" : "↑↓ select · Enter confirm · Esc back"}
+          status={isZh ? "等级" : "Level"}
+          hints={hintLine([
+            isZh ? "↑↓ 选择" : "↑↓ select",
+            isZh ? "Enter 确认" : "enter confirm",
+            isZh ? "Esc 返回" : "esc back"
+          ])}
         />
       </Box>
     );
@@ -151,11 +157,13 @@ export function SettingsScreen({
   if (step === "goal") {
     return (
       <Box flexDirection="column">
-        <Text bold>{isZh ? "每日目标 (1-9)" : "Daily goal (1-9)"}</Text>
-        <Text dimColor>{isZh ? "输入数字 1-9" : "Type a number 1-9"}</Text>
+        <AppHeader title="QuizMe" subtitle={isZh ? "设置 · 每日目标" : "Settings · Daily goal"} />
+        <Box marginTop={1}>
+          <Text color={theme.inactive}>{isZh ? "输入数字 1-9" : "Type a number from 1 to 9"}</Text>
+        </Box>
         <StatusBar
-          status={isZh ? "设置 · 每日目标" : "Settings · Daily goal"}
-          hints={isZh ? "输入 1-9 · Esc 返回" : "Type 1-9 · Esc back"}
+          status={isZh ? "每日目标" : "Daily goal"}
+          hints={hintLine([isZh ? "输入 1-9" : "type 1-9", isZh ? "Esc 返回" : "esc back"])}
         />
       </Box>
     );
@@ -163,13 +171,17 @@ export function SettingsScreen({
 
   return (
     <Box flexDirection="column">
-      <Text bold>{isZh ? "=== 设置 ===" : "=== Settings ==="}</Text>
+      <AppHeader title="QuizMe" subtitle={isZh ? "设置" : "Settings"} />
       <Box marginTop={1}>
         <SelectList items={menuItems} selectedIndex={menuIndex} />
       </Box>
       <StatusBar
-        status={isZh ? "设置" : "Settings"}
-        hints={isZh ? "↑↓ 选择 · Enter 确认/切换 · Esc 返回" : "↑↓ select · Enter confirm/toggle · Esc back"}
+        status={isZh ? "偏好" : "Preferences"}
+        hints={hintLine([
+          isZh ? "↑↓ 选择" : "↑↓ select",
+          isZh ? "Enter 确认/切换" : "enter confirm/toggle",
+          isZh ? "Esc 返回" : "esc back"
+        ])}
       />
     </Box>
   );

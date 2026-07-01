@@ -1,4 +1,5 @@
 import { Text, useInput } from "ink";
+import { theme } from "../theme.js";
 
 export function TextInput({
   value,
@@ -31,9 +32,11 @@ export function TextInput({
 
   return (
     <Text>
-      {placeholder}
-      {value}
-      <Text inverse> </Text>
+      <Text color={theme.permission}>{placeholder}</Text>
+      <Text color={theme.text}>{value}</Text>
+      <Text backgroundColor={theme.suggestion} color={theme.inverseText}>
+        {" "}
+      </Text>
     </Text>
   );
 }

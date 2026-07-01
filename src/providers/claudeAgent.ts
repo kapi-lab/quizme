@@ -1,7 +1,15 @@
 import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import { QUESTION_SCHEMA } from "../generation/schema.js";
-import type { QuizMode, QuizQuestion, SourceSummary, UserConfig } from "../types.js";
+import { validateQuestions } from "../generation/validator.js";
+import type {
+  ProfilePreference,
+  ProfileSignal,
+  QuizMode,
+  QuizQuestion,
+  SourceSummary,
+  UserConfig
+} from "../types.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -49,36 +57,75 @@ function getAssistantBlocks(event: ClaudeAssistantEvent): AssistantBlock[] {
   return Array.isArray(content) ? (content as AssistantBlock[]) : [];
 }
 
-function extractQuestionsPayload(value: unknown): { questions?: QuizQuestion[] } | null {
+function extractQuestionsPayload(value: unknown): { questions?: unknown[] } | null {
   if (!isObject(value)) {
     return null;
   }
   if (!("questions" in value)) {
-    return value as { questions?: QuizQuestion[] };
+    return null;
   }
-  return Array.isArray(value.questions) ? (value as { questions?: QuizQuestion[] }) : null;
+  return Array.isArray(value.questions) ? (value as { questions?: unknown[] }) : null;
+}
+
+function summarizeSignals(signals: ProfileSignal[]): string {
+  if (!signals.length) return "None yet.";
+  const strongest = [...signals].sort((a, b) => b.score - a.score).slice(0, 5);
+  const weakest = [...signals]
+    .filter((s) => s.wrongCount > 0)
+    .sort((a, b) => a.score - b.score || b.wrongCount - a.wrongCount)
+    .slice(0, 5);
+  const format = (s: ProfileSignal) =>
+    `${s.tag}(score=${s.score.toFixed(2)}, conf=${s.confidence.toFixed(2)}, +${s.correctCount}/-${s.wrongCount})`;
+  return [
+    `Strong: ${strongest.map(format).join(", ") || "none"}`,
+    `Weak: ${weakest.map(format).join(", ") || "none"}`
+  ].join("\n");
+}
+
+function summarizePreferences(prefs: ProfilePreference[]): string {
+  if (!prefs.length) return "None.";
+  const boost = prefs.filter((p) => p.kind === "boost").map((p) => p.tag);
+  const suppress = prefs.filter((p) => p.kind === "suppress").map((p) => p.tag);
+  const known = prefs.filter((p) => p.kind === "known").map((p) => p.tag);
+  const lines: string[] = [];
+  if (boost.length) lines.push(`Boost (user wants more): ${boost.join(", ")}`);
+  if (suppress.length) lines.push(`Suppress (user wants less): ${suppress.join(", ")}`);
+  if (known.length) lines.push(`Already known (deprioritize as strong-area): ${known.join(", ")}`);
+  return lines.join("\n") || "None.";
 }
 
 function buildQuizPrompt({
   source,
   config,
   recentQuestions,
-  mode
+  mode,
+  signals,
+  preferences
 }: {
   source: SourceSummary;
   config: UserConfig;
   recentQuestions: QuizQuestion[];
   mode: QuizMode;
+  signals: ProfileSignal[];
+  preferences: ProfilePreference[];
 }) {
   return [
     "You are QuizMe, a CLI technical interview quiz generator for developers.",
     "Return strict JSON only, matching the provided schema.",
-    "Generate 3 to 5 multiple-choice questions with exactly 4 choices each and exactly one best answer.",
-    "Question mix: 40% contextual (related to session/repo), 40% adjacent knowledge, 20% interview-style.",
+    "Generate 3 to 5 multiple-choice questions with exactly 4 choices (ids A, B, C, D) and exactly one best answer.",
+    "Every question MUST include a `sourceMode` field, one of: contextual (about the session/repo), adjacent (related tools/frameworks/concepts), interview_style (evergreen interview knowledge).",
+    "Target mix across the batch: ~40% contextual, ~40% adjacent, ~20% interview_style.",
+    "Every question MUST include a `whyWrong` object with a short reason for each non-answer choice id.",
     "Focus on engineering judgment, debugging, tradeoffs, and code review reasoning — not trivia.",
+    "Weight the batch toward the user's weak areas from profile signals below; keep a small share of strong-area questions for positive reinforcement.",
+    "Respect user preferences: boost tags should appear more often; suppress and 'known' tags should appear less often (do not fully drop them, just deprioritize).",
     `User level: ${config.level}`,
     `Language for questions and explanations: ${config.language}`,
     `Mode: ${mode}`,
+    "Profile signals:",
+    summarizeSignals(signals),
+    "Profile preferences:",
+    summarizePreferences(preferences),
     "Recent questions to avoid repeating (topic:question pairs):",
     JSON.stringify(recentQuestions.slice(0, 20).map((q) => ({ topic: q.topic, question: q.question }))),
     "Source context summary:",
@@ -177,7 +224,7 @@ async function runClaude(
   });
 }
 
-function parseQuestionsFromEvents(events: ClaudeEvent[]): { questions?: QuizQuestion[] } | null {
+function parseQuestionsFromEvents(events: ClaudeEvent[]): { questions?: unknown[] } | null {
   for (const event of events) {
     if (isAssistantEvent(event)) {
       for (const block of getAssistantBlocks(event)) {
@@ -236,15 +283,19 @@ export async function generateQuestions({
   config,
   recentQuestions,
   mode = "mixed",
+  signals = [],
+  preferences = [],
   onProgress
 }: {
   source: SourceSummary;
   config: UserConfig;
   recentQuestions: QuizQuestion[];
   mode?: QuizMode;
+  signals?: ProfileSignal[];
+  preferences?: ProfilePreference[];
   onProgress?: (chunk: string) => void;
 }): Promise<QuizQuestion[]> {
-  const prompt = buildQuizPrompt({ source, config, recentQuestions, mode });
+  const prompt = buildQuizPrompt({ source, config, recentQuestions, mode, signals, preferences });
   const events: ClaudeEvent[] = [];
 
   await runClaude(
@@ -271,10 +322,7 @@ export async function generateQuestions({
     throw new Error("Claude returned no questions. Try again or use a different source.");
   }
 
-  const questions = parsed.questions;
-  if (!Array.isArray(questions) || questions.length === 0) {
-    throw new Error("Claude returned an empty questions array.");
-  }
+  const questions = validateQuestions(parsed);
 
   return questions.map((q: QuizQuestion, index: number) => ({
     ...q,

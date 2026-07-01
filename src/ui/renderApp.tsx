@@ -14,16 +14,14 @@ export async function runInkHome({
   config: UserConfig;
   resolveSource: (args: { _: string[]; repo?: string; session?: string }) => SourceSummary;
 }) {
-  let unmount = () => {};
   const rendered = render(
     <App
       store={store}
       initialConfig={config}
       resolveSource={resolveSource}
-      onExit={unmount}
+      onExit={() => rendered.unmount()}
     />
   );
-  unmount = rendered.unmount;
   await rendered.waitUntilExit();
 }
 
@@ -35,15 +33,13 @@ export async function runInkQuiz(props: {
   mode?: QuizMode;
 }) {
   const sound = createSoundPlayer(props.config);
-  let unmount = () => {};
   const rendered = render(
     <QuizScreen
       {...props}
       sound={sound}
-      onDone={unmount}
+      onDone={() => rendered.unmount()}
     />
   );
-  unmount = rendered.unmount;
   await rendered.waitUntilExit();
 }
 

@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { dedupeQuestions } from "../../generation/dedupe.js";
 import { generateQuestions, generateWhy } from "../../providers/claudeAgent.js";
+import { AppHeader } from "../components/AppHeader.js";
 import { SelectList } from "../components/SelectList.js";
 import { StatusBar } from "../components/StatusBar.js";
 import { TextInput } from "../components/TextInput.js";
 import { formatProfile, formatStats } from "../formatters.js";
+import { hintLine, theme } from "../theme.js";
 import type {
   AnswerResult,
   QuizMode,
@@ -84,11 +86,15 @@ export function QuizScreen({
         if (questionsOverride) {
           loaded = dedupeQuestions(questionsOverride, recentQuestions).slice(0, 5);
         } else {
+          const signals = store.getProfileSignals();
+          const preferences = store.listProfilePreferences();
           const generated = await generateQuestions({
             source,
             config,
             recentQuestions,
             mode,
+            signals,
+            preferences,
             onProgress: () => {}
           });
           loaded = dedupeQuestions(generated, recentQuestions).slice(0, 5);
@@ -308,10 +314,11 @@ export function QuizScreen({
   if (phase === "error") {
     return (
       <Box flexDirection="column">
-        <Text color="red">{error}</Text>
+        <AppHeader title="QuizMe" subtitle={isZh ? "错误" : "Error"} />
+        <Text color={theme.error}>{error}</Text>
         <StatusBar
-          status={isZh ? "错误" : "Error"}
-          hints={isZh ? "Enter 或 q 返回" : "Enter or q to go back"}
+          status={isZh ? "无法继续" : "Cannot continue"}
+          hints={hintLine([isZh ? "Enter 或 q 返回" : "enter or q to go back"])}
         />
       </Box>
     );
@@ -320,12 +327,13 @@ export function QuizScreen({
   if (phase === "generating") {
     return (
       <Box flexDirection="column">
-        <Text>
+        <AppHeader title="QuizMe" subtitle={isZh ? "生成中" : "Generating"} />
+        <Text color={theme.claude}>
           {isZh ? `正在生成题目 (${genElapsed}s)...` : `Generating questions (${genElapsed}s)...`}
         </Text>
         <StatusBar
-          status={isZh ? "生成中" : "Generating"}
-          hints={isZh ? "请稍候..." : "Please wait..."}
+          status={isZh ? "请稍候" : "Please wait"}
+          hints={hintLine([isZh ? "基于当前上下文出题" : "building questions from context"])}
         />
       </Box>
     );
@@ -344,69 +352,103 @@ export function QuizScreen({
   let hintsText = "";
 
   if (overlay === "stats") {
-    statusText = isZh ? "统计 · 按 Enter 关闭" : "Stats · Press Enter to close";
-    hintsText = "";
+    statusText = isZh ? "统计" : "Stats";
+    hintsText = hintLine([isZh ? "Enter 关闭" : "enter close"]);
   } else if (overlay === "profile") {
-    statusText = isZh ? "档案 · 按 Enter 关闭" : "Profile · Press Enter to close";
-    hintsText = "";
+    statusText = isZh ? "档案" : "Profile";
+    hintsText = hintLine([isZh ? "Enter 关闭" : "enter close"]);
   } else if (phase === "question") {
     statusText = isZh
-      ? `答题 · Q${questionIndex + 1}/${total} · ${question.topic}`
-      : `Question · Q${questionIndex + 1}/${total} · ${question.topic}`;
-    hintsText = isZh
-      ? "↑↓ 选择答案 · Enter 确认 · A-D/1-4 快捷 · s 统计 · p 档案 · q 退出"
-      : "↑↓ select · Enter confirm · A-D/1-4 shortcut · s stats · p profile · q exit";
+      ? `Q${questionIndex + 1}/${total} · ${question.topic}`
+      : `Q${questionIndex + 1}/${total} · ${question.topic}`;
+    hintsText = hintLine([
+      isZh ? "↑↓ 选择" : "↑↓ select",
+      isZh ? "Enter 确认" : "enter confirm",
+      "A-D/1-4",
+      "s stats",
+      "p profile",
+      "q exit"
+    ]);
   } else if (phase === "result") {
-    statusText = isZh ? "查看结果 · 选择下一步" : "Result · Choose next step";
-    hintsText = isZh
-      ? "↑↓ 选择 · Enter 确认 · s 统计 · p 档案"
-      : "↑↓ select · Enter confirm · s stats · p profile";
+    statusText = isZh ? "结果" : "Result";
+    hintsText = hintLine([
+      isZh ? "↑↓ 选择" : "↑↓ select",
+      isZh ? "Enter 确认" : "enter confirm",
+      "s stats",
+      "p profile"
+    ]);
   } else if (phase === "why") {
-    statusText = isZh ? "Why 模式 · 输入追问" : "Why mode · Ask a follow-up";
-    hintsText = isZh
-      ? "Enter 发送 · Esc 返回 · 输入 back/next 结束"
-      : "Enter to send · Esc to go back · type back/next to finish";
+    statusText = isZh ? "Why" : "Why";
+    hintsText = hintLine([
+      isZh ? "Enter 发送" : "enter send",
+      isZh ? "Esc 返回" : "esc back",
+      "back/next"
+    ]);
   }
+
+  const quizSubtitle = isZh
+    ? `第 ${questionIndex + 1}/${total} 题 · 难度 ${question.difficulty}`
+    : `Question ${questionIndex + 1}/${total} · Difficulty ${question.difficulty}`;
 
   return (
     <Box flexDirection="column">
+      <AppHeader title="QuizMe" subtitle={quizSubtitle} />
       {overlay === "stats" ? (
         <Box flexDirection="column">
-          {formatStats(store).map((line) => (
-            <Text key={line}>{line}</Text>
+          {formatStats(store).map((line, index) => (
+            <Text
+              key={line}
+              color={index === 0 ? theme.claude : theme.text}
+              bold={index === 0}
+            >
+              {line}
+            </Text>
           ))}
         </Box>
       ) : overlay === "profile" ? (
         <Box flexDirection="column">
-          {formatProfile(store).map((line) => (
-            <Text key={line}>{line}</Text>
+          {formatProfile(store).map((line, index) => (
+            <Text
+              key={line}
+              color={index === 0 ? theme.claude : theme.text}
+              bold={index === 0}
+            >
+              {line}
+            </Text>
           ))}
         </Box>
       ) : phase === "question" ? (
         <Box flexDirection="column">
-          <Text bold>
-            Q{questionIndex + 1}/{total} · {question.topic} · Difficulty {question.difficulty}
+          <Text bold color={theme.claude}>
+            {question.topic}
           </Text>
           <Box marginTop={1} marginBottom={1}>
-            <Text>{question.question}</Text>
+            <Text color={theme.text} wrap="wrap">
+              {question.question}
+            </Text>
           </Box>
           <SelectList items={choiceItems} selectedIndex={choiceIndex} />
         </Box>
       ) : phase === "result" ? (
         <Box flexDirection="column">
-          <Text bold color={answerResult?.correct ? "green" : "red"}>
+          <Text
+            bold
+            color={answerResult?.correct ? theme.success : theme.error}
+          >
             {answerResult?.correct
-              ? isZh ? "回答正确！" : "Correct."
+              ? isZh ? "回答正确" : "Correct"
               : isZh
-                ? `回答错误。正确答案: ${question.answer}.`
-                : `Incorrect. Correct answer: ${question.answer}.`}
+                ? `回答错误 · 正确答案 ${question.answer}`
+                : `Incorrect · Correct answer ${question.answer}`}
           </Text>
           <Box marginTop={1} marginBottom={1}>
-            <Text>{question.explanation}</Text>
+            <Text color={theme.text} wrap="wrap">
+              {question.explanation}
+            </Text>
           </Box>
           {!answerResult?.correct && answerResult && question.whyWrong[answerResult.selected] ? (
             <Box marginBottom={1}>
-              <Text dimColor>
+              <Text color={theme.inactive} wrap="wrap">
                 {answerResult.selected}: {question.whyWrong[answerResult.selected]}
               </Text>
             </Box>
@@ -415,19 +457,28 @@ export function QuizScreen({
         </Box>
       ) : (
         <Box flexDirection="column">
-          <Text bold>{isZh ? "Why 模式" : "Why mode"}</Text>
+          <Text bold color={theme.permission}>
+            {isZh ? "Why" : "Why"}
+          </Text>
           <Box marginTop={1} flexDirection="column">
             {whyMessages.map((msg, i) => (
               <Box key={`${msg.asked}-${i}`} flexDirection="column" marginBottom={1}>
-                <Text color="cyan">{isZh ? "问: " : "Q: "}{msg.asked}</Text>
-                <Text wrap="wrap">{msg.answer}</Text>
+                <Text color={theme.suggestion}>
+                  {isZh ? "问: " : "Q: "}
+                  {msg.asked}
+                </Text>
+                <Text color={theme.text} wrap="wrap">
+                  {msg.answer}
+                </Text>
               </Box>
             ))}
             {whyLoading && whyStreaming ? (
-              <Text wrap="wrap">{whyStreaming}</Text>
+              <Text color={theme.text} wrap="wrap">
+                {whyStreaming}
+              </Text>
             ) : null}
             {whyLoading && !whyStreaming ? (
-              <Text dimColor>{isZh ? "思考中..." : "Thinking..."}</Text>
+              <Text color={theme.inactive}>{isZh ? "思考中..." : "Thinking..."}</Text>
             ) : null}
           </Box>
           {!whyLoading ? (
