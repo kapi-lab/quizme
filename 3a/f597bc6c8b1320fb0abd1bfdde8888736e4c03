@@ -1,0 +1,26 @@
+docs/technical.md
+  s_569857042190da::t_314480e0ec2a17 408
+  s_569857042190da::t_8ae2cbff05c744 178-209
+README.md
+  s_569857042190da::t_e6593a0d866294 30
+src/providers/claudeAgent.ts
+  s_569857042190da::t_b9eda9f57bc38c 161-169,175
+docs/product.md
+  s_569857042190da::t_b565cb581b8d41 294
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "3af597bc6c8b1320fb0abd1bfdde8888736e4c03",
+  "prompts": {},
+  "sessions": {
+    "s_569857042190da": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "a6918aa9-ca29-4c2e-8eca-e8513d671a3b",
+        "model": "composer-2.5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
