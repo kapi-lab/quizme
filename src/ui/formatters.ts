@@ -1,4 +1,6 @@
-export function formatStats(store) {
+import type { ProfileSignal, Store } from "../types.js";
+
+export function formatStats(store: Store): string[] {
   const stats = store.getStats();
   const week = renderWeek(stats.weekRows);
   return [
@@ -18,7 +20,7 @@ export function formatStats(store) {
   ];
 }
 
-export function formatProfile(store) {
+export function formatProfile(store: Store): string[] {
   const signals = store.getProfileSignals();
   const strong = signals.slice(0, 3).map(formatSignal).join(", ") || "Still learning your profile";
   const weakSignals = [...signals]
@@ -35,11 +37,11 @@ export function formatProfile(store) {
   ];
 }
 
-function formatSignal(item) {
+function formatSignal(item: ProfileSignal): string {
   return `${item.tag} (${Math.round(item.score * 100)}%, ${item.trend})`;
 }
 
-function buildProfileRead(signals) {
+function buildProfileRead(signals: ProfileSignal[]): string {
   if (!signals.length) {
     return "Current read: still learning your profile.";
   }
@@ -48,7 +50,7 @@ function buildProfileRead(signals) {
   return `Current read: stronger on ${strongest.tag}, weaker on ${weakest.tag}.`;
 }
 
-function renderWeek(weekRows) {
+function renderWeek(weekRows: [string, string][]): string {
   if (!weekRows.length) {
     return "No activity yet.";
   }

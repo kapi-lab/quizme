@@ -2,8 +2,9 @@ import path from "node:path";
 import { getAppDataDir } from "../platform/paths.js";
 import { SqliteStore } from "./sqlite.js";
 import { ensureDir } from "../platform/fs.js";
+import type { Store } from "../types.js";
 
-export function createStore() {
+export function createStore(): Store {
   let dataDir = getAppDataDir();
   try {
     ensureDir(dataDir);

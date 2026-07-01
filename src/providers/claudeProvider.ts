@@ -2,8 +2,19 @@ import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import { QUESTION_SCHEMA } from "../generation/schema.js";
 import { generateQuestionsLocally, generateWhyLocally } from "./localProvider.js";
+import type { QuizQuestion, QuizMode, SourceSummary, UserConfig } from "../types.js";
 
-function buildPrompt({ source, config, recentQuestions, mode }) {
+function buildPrompt({
+  source,
+  config,
+  recentQuestions,
+  mode
+}: {
+  source: SourceSummary;
+  config: UserConfig;
+  recentQuestions: QuizQuestion[];
+  mode: QuizMode;
+}) {
   return [
     "You are QuizMe, a CLI technical interview quiz generator for developers.",
     "Return strict JSON only, matching the provided schema.",
@@ -20,7 +31,17 @@ function buildPrompt({ source, config, recentQuestions, mode }) {
   ].join("\n\n");
 }
 
-export function generateQuestionsWithClaude({ source, config, recentQuestions, mode = "mixed" }) {
+export function generateQuestionsWithClaude({
+  source,
+  config,
+  recentQuestions,
+  mode = "mixed"
+}: {
+  source: SourceSummary;
+  config: UserConfig;
+  recentQuestions: QuizQuestion[];
+  mode?: QuizMode;
+}): QuizQuestion[] {
   if (process.env.QUIZME_PROVIDER === "local") {
     return generateQuestionsLocally({ source, config, recentQuestions, mode });
   }
@@ -40,7 +61,7 @@ export function generateQuestionsWithClaude({ source, config, recentQuestions, m
       timeout: 120000
     });
     const payload = JSON.parse(stdout);
-    return payload.questions.map((question, index) => ({
+    return (payload.questions as QuizQuestion[]).map((question: QuizQuestion, index: number) => ({
       ...question,
       id: question.id || `q_${crypto.createHash("sha1").update(`${source.title}:${question.question}:${index}`).digest("hex").slice(0, 10)}`
     }));
@@ -52,7 +73,17 @@ export function generateQuestionsWithClaude({ source, config, recentQuestions, m
   }
 }
 
-export function generateWhyWithClaude({ question, config, asked, userAnswer }) {
+export function generateWhyWithClaude({
+  question,
+  config,
+  asked,
+  userAnswer
+}: {
+  question: QuizQuestion;
+  config: UserConfig;
+  asked: string;
+  userAnswer: string;
+}): string {
   if (process.env.QUIZME_PROVIDER === "local") {
     return generateWhyLocally({ question, config, asked, userAnswer });
   }

@@ -1,15 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import type { SourceSummary } from "../types.js";
 
-function readIfExists(filePath, max = 4000) {
+function readIfExists(filePath: string, max = 4000): string {
   if (!fs.existsSync(filePath)) {
     return "";
   }
   return fs.readFileSync(filePath, "utf8").slice(0, max);
 }
 
-function safeGit(args, cwd) {
+function safeGit(args: string[], cwd: string): string {
   try {
     return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
   } catch {
@@ -17,7 +18,7 @@ function safeGit(args, cwd) {
   }
 }
 
-export function getRepoSummary(repoPath = process.cwd()) {
+export function getRepoSummary(repoPath = process.cwd()): SourceSummary {
   const packageJson = readIfExists(path.join(repoPath, "package.json"), 5000);
   const readme = readIfExists(path.join(repoPath, "README.md"), 5000);
   const srcFiles = fs.existsSync(repoPath)

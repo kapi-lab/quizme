@@ -18,7 +18,7 @@ export function getAppDataDir() {
   return path.join(process.env.XDG_DATA_HOME || path.join(home, ".local", "share"), "quizme");
 }
 
-export function slugifyProjectPath(projectPath) {
+export function slugifyProjectPath(projectPath: string): string {
   return projectPath.replace(/[:\\/]+/g, "-").replace(/_/g, "-");
 }
 

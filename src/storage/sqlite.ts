@@ -1,25 +1,28 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { ensureDir } from "../platform/fs.js";
+import type { ProfileSignal, QuizQuestion, Stats, WhyTurn } from "../types.js";
 
-function shellQuote(value) {
+function shellQuote(value: unknown): string {
   return `'${String(value).replace(/'/g, "''")}'`;
 }
 
 export class SqliteStore {
-  constructor(dbPath) {
+  dbPath: string;
+
+  constructor(dbPath: string) {
     this.dbPath = dbPath;
     ensureDir(path.dirname(dbPath));
   }
 
-  exec(sql) {
+  exec(sql: string) {
     return execFileSync("sqlite3", [this.dbPath, sql], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"]
     }).trim();
   }
 
-  init() {
+  init(): void {
     this.exec(`
       PRAGMA busy_timeout=5000;
       CREATE TABLE IF NOT EXISTS config (
@@ -67,7 +70,7 @@ export class SqliteStore {
     `);
   }
 
-  setConfig(key, value) {
+  setConfig(key: string, value: unknown): void {
     this.exec(`
       INSERT INTO config(key, value_json)
       VALUES (${shellQuote(key)}, ${shellQuote(JSON.stringify(value))})
@@ -75,12 +78,12 @@ export class SqliteStore {
     `);
   }
 
-  getConfig(key, fallback = null) {
+  getConfig<T>(key: string, fallback: T | null = null): T | null {
     const output = this.exec(`SELECT value_json FROM config WHERE key=${shellQuote(key)} LIMIT 1;`);
-    return output ? JSON.parse(output) : fallback;
+    return output ? (JSON.parse(output) as T) : fallback;
   }
 
-  saveQuestion(question, sourceType) {
+  saveQuestion(question: QuizQuestion, sourceType: string): void {
     this.exec(`
       INSERT OR REPLACE INTO questions(id, source_type, topic, difficulty, payload_json, created_at)
       VALUES (
@@ -94,16 +97,28 @@ export class SqliteStore {
     `);
   }
 
-  listRecentQuestions(limit = 20) {
+  listRecentQuestions(limit = 20): QuizQuestion[] {
     const output = this.exec(`
       SELECT payload_json FROM questions
       ORDER BY datetime(created_at) DESC
       LIMIT ${Number(limit)};
     `);
-    return output ? output.split("\n").filter(Boolean).map((line) => JSON.parse(line)) : [];
+    return output ? output.split("\n").filter(Boolean).map((line) => JSON.parse(line) as QuizQuestion) : [];
   }
 
-  recordAttempt({ questionId, selected, correct, durationMs, tags }) {
+  recordAttempt({
+    questionId,
+    selected,
+    correct,
+    durationMs,
+    tags
+  }: {
+    questionId: string;
+    selected: string;
+    correct: boolean;
+    durationMs: number;
+    tags: string[];
+  }): void {
     this.exec(`
       INSERT INTO attempts(question_id, selected, correct, duration_ms, tags_json, created_at)
       VALUES (
@@ -117,7 +132,7 @@ export class SqliteStore {
     `);
   }
 
-  updateSignal(tag, wasCorrect) {
+  updateSignal(tag: string, wasCorrect: boolean): void {
     const row = this.exec(`
       SELECT score, confidence, correct_count, wrong_count
       FROM profile_signals WHERE tag=${shellQuote(tag)} LIMIT 1;
@@ -157,7 +172,7 @@ export class SqliteStore {
     `);
   }
 
-  getProfileSignals() {
+  getProfileSignals(): ProfileSignal[] {
     const output = this.exec(`
       SELECT tag, score, confidence, trend, correct_count, wrong_count
       FROM profile_signals
@@ -178,7 +193,7 @@ export class SqliteStore {
       : [];
   }
 
-  getStats() {
+  getStats(): Stats {
     const attemptsTotal = Number(this.exec("SELECT COUNT(*) FROM attempts;") || 0);
     const attemptsCorrect = Number(this.exec("SELECT COUNT(*) FROM attempts WHERE correct=1;") || 0);
     const todayCount = Number(this.exec("SELECT COUNT(*) FROM attempts WHERE date(created_at)=date('now','localtime');") || 0);
@@ -248,11 +263,13 @@ export class SqliteStore {
       xp,
       level,
       accuracy: attemptsTotal ? attemptsCorrect / attemptsTotal : 0,
-      weekRows: weekRows ? weekRows.split("\n").filter(Boolean).map((line) => line.split("|")) : []
+      weekRows: weekRows
+        ? weekRows.split("\n").filter(Boolean).map((line) => line.split("|") as [string, string])
+        : []
     };
   }
 
-  upsertReviewItem(questionId, resolved) {
+  upsertReviewItem(questionId: string, resolved: boolean): void {
     this.exec(`
       INSERT INTO review_items(question_id, resolved, last_result, updated_at)
       VALUES (${shellQuote(questionId)}, ${resolved ? 1 : 0}, ${resolved ? 1 : 0}, datetime('now'))
@@ -263,7 +280,7 @@ export class SqliteStore {
     `);
   }
 
-  listReviewQuestionIds(limit = 5) {
+  listReviewQuestionIds(limit = 5): string[] {
     const output = this.exec(`
       SELECT question_id FROM review_items
       WHERE resolved=0
@@ -273,14 +290,14 @@ export class SqliteStore {
     return output ? output.split("\n").filter(Boolean) : [];
   }
 
-  appendWhyThread(questionId, turns) {
+  appendWhyThread(questionId: string, turns: WhyTurn[]): void {
     this.exec(`
       INSERT INTO why_threads(question_id, turns_json, updated_at)
       VALUES (${shellQuote(questionId)}, ${shellQuote(JSON.stringify(turns))}, datetime('now'));
     `);
   }
 
-  clearAll() {
+  clearAll(): void {
     this.exec(`
       DELETE FROM attempts;
       DELETE FROM questions;
@@ -290,7 +307,7 @@ export class SqliteStore {
     `);
   }
 
-  clearWhyThreads() {
+  clearWhyThreads(): void {
     this.exec("DELETE FROM why_threads;");
   }
 }

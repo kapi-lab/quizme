@@ -1,7 +1,11 @@
 import { exec } from "node:child_process";
 import { platform } from "node:os";
+import type { SoundPlayer, UserConfig } from "../types.js";
 
 const os = platform();
+type SupportedOs = "darwin" | "linux" | "win32";
+const currentOs: SupportedOs = os === "darwin" || os === "linux" || os === "win32" ? os : "linux";
+type SoundName = keyof typeof SOUND_MAP;
 
 const SOUND_MAP = {
   navigate: {
@@ -46,11 +50,13 @@ const SOUND_MAP = {
   }
 };
 
-function playDarwin(path) {
+function playDarwin(path?: string) {
+  if (!path) return;
   exec(`afplay "${path}"`, { timeout: 2000 }, () => {});
 }
 
-function playLinux(name) {
+function playLinux(name?: string) {
+  if (!name) return;
   exec(`canberra-gtk-play -i ${name}`, { timeout: 2000 }, () => {});
 }
 
@@ -58,15 +64,19 @@ function playWin32() {
   process.stdout.write("\x07");
 }
 
-const players = { darwin: playDarwin, linux: playLinux, win32: playWin32 };
+const players: Record<SupportedOs, (arg?: string) => void> = {
+  darwin: playDarwin,
+  linux: playLinux,
+  win32: playWin32
+};
 
-function playSound(name) {
+function playSound(name: SoundName) {
   const entry = SOUND_MAP[name];
   if (!entry) return;
-  const arg = entry[os];
-  if (!arg && os !== "win32") return;
+  const arg = entry[currentOs];
+  if (!arg && currentOs !== "win32") return;
   try {
-    players[os](arg);
+    players[currentOs](arg ?? undefined);
   } catch {
     // sound is a non-critical enhancement; swallow errors
   }
@@ -77,10 +87,10 @@ function playSound(name) {
  * Returns an object with play methods for each sound event.
  * All methods are no-ops when config.soundEnabled is false.
  */
-export function createSoundPlayer(config) {
+export function createSoundPlayer(config: UserConfig): SoundPlayer {
   const enabled = config?.soundEnabled === true;
 
-  function fire(name) {
+  function fire(name: SoundName) {
     if (!enabled) return;
     playSound(name);
   }

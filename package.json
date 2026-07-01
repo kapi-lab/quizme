@@ -4,11 +4,12 @@
   "description": "Interactive CLI quiz practice for developers using Claude Code context.",
   "type": "module",
   "bin": {
-    "quizme": "./src/cli/index.js"
+    "quizme": "./src/cli/index.ts"
   },
   "scripts": {
-    "start": "node --import tsx ./src/cli/index.js",
-    "test": "node --test"
+    "start": "node --import tsx ./src/cli/index.ts",
+    "test": "node --import tsx --test test/paths.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": ">=20"
@@ -19,5 +20,10 @@
     "react": "^18.3.1",
     "tsx": "^4.22.4"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "@types/react": "^19.2.17",
+    "typescript": "^6.0.3"
+  }
 }

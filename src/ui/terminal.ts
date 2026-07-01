@@ -1,7 +1,8 @@
 // Legacy render helpers kept for compatibility.
 // Interactive UI is now powered by Ink components in src/ui/.
+import type { QuizQuestion, Stats } from "../types.js";
 
-export function renderHome(stats, lang) {
+export function renderHome(stats: Stats | null, lang: string) {
   const isZh = lang === "zh-CN";
   const streak = stats ? stats.currentStreak : 0;
   const today = stats ? stats.todayCount : 0;
@@ -16,7 +17,7 @@ export function renderHome(stats, lang) {
   ].join("\n");
 }
 
-export function renderQuestion(question, index, total) {
+export function renderQuestion(question: QuizQuestion, index: number, total: number) {
   const lines = [
     "",
     `Q${index + 1}/${total} · ${question.topic} · Difficulty ${question.difficulty}`,
@@ -30,7 +31,7 @@ export function renderQuestion(question, index, total) {
   return lines.join("\n");
 }
 
-export function renderResult(question, selected) {
+export function renderResult(question: QuizQuestion, selected: string) {
   const correct = selected === question.answer;
   const wrongReason = correct ? "" : `\n${selected}: ${question.whyWrong[selected] || "Not the best option in this context."}`;
   return [

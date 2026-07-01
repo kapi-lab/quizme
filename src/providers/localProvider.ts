@@ -1,9 +1,21 @@
 import crypto from "node:crypto";
+import type { QuizQuestion, SourceSummary, UserConfig } from "../types.js";
 
-const QUESTION_BANK = [
+type LocalTemplate = {
+  topic: string;
+  question: (topic: string) => string;
+  choices: { id: string; text: string }[];
+  answer: string;
+  explanation: string;
+  whyWrong: Record<string, string>;
+  tags: string[];
+  followUps: string[];
+};
+
+const QUESTION_BANK: LocalTemplate[] = [
   {
     topic: "Debugging",
-    question: (topic) => `When investigating ${topic}, which first step usually gives the highest signal without overcommitting to a fix?`,
+    question: (topic: string) => `When investigating ${topic}, which first step usually gives the highest signal without overcommitting to a fix?`,
     choices: [
       { id: "A", text: "Patch several layers at once so the issue disappears quickly" },
       { id: "B", text: "Reproduce the issue with the smallest concrete input and inspect the boundary that changes state" },
@@ -22,7 +34,7 @@ const QUESTION_BANK = [
   },
   {
     topic: "Code Review",
-    question: (topic) => `In a code review related to ${topic}, which comment is usually the most valuable?`,
+    question: (topic: string) => `In a code review related to ${topic}, which comment is usually the most valuable?`,
     choices: [
       { id: "A", text: "A style-only nit that does not affect maintainability" },
       { id: "B", text: "A specific note about a behavior change, edge case, or missing verification" },
@@ -41,7 +53,7 @@ const QUESTION_BANK = [
   },
   {
     topic: "Tradeoffs",
-    question: (topic) => `For a feature involving ${topic}, when is an explicit tradeoff discussion most necessary?`,
+    question: (topic: string) => `For a feature involving ${topic}, when is an explicit tradeoff discussion most necessary?`,
     choices: [
       { id: "A", text: "When two options differ on latency, complexity, or operational risk" },
       { id: "B", text: "Only when code formatting rules disagree" },
@@ -60,7 +72,14 @@ const QUESTION_BANK = [
   }
 ];
 
-export function generateQuestionsLocally({ source }) {
+export function generateQuestionsLocally({
+  source
+}: {
+  source: SourceSummary;
+  config?: UserConfig;
+  recentQuestions?: QuizQuestion[];
+  mode?: string;
+}): QuizQuestion[] {
   const topic = source.title || "the current engineering context";
   return QUESTION_BANK.map((template, index) => ({
     id: `q_${crypto.createHash("sha1").update(`${topic}:${index}`).digest("hex").slice(0, 10)}`,
@@ -76,7 +95,15 @@ export function generateQuestionsLocally({ source }) {
   }));
 }
 
-export function generateWhyLocally({ question, asked }) {
+export function generateWhyLocally({
+  question,
+  asked
+}: {
+  question: QuizQuestion;
+  asked: string;
+  config?: UserConfig;
+  userAnswer?: string;
+}): string {
   return [
     `Question focus: ${question.topic}`,
     `Follow-up: ${asked}`,
