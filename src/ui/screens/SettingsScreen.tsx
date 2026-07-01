@@ -16,40 +16,39 @@ const LEVELS = [
 export function SettingsScreen({
   config,
   sound,
-  onSave,
+  onPersist,
   onBack
 }: {
   config: UserConfig;
   sound: SoundPlayer;
-  onSave: (config: UserConfig) => void;
+  onPersist: (config: UserConfig) => void;
   onBack: () => void;
 }) {
   const isZh = config.language === "zh-CN";
   const [step, setStep] = useState<"menu" | "level" | "goal">("menu");
-  const [draft, setDraft] = useState({ ...config });
   const [menuIndex, setMenuIndex] = useState(0);
   const [levelIndex, setLevelIndex] = useState(
     Math.max(0, LEVELS.findIndex((l) => l.id === config.level))
   );
   const soundRef = useRef(sound);
   soundRef.current = sound;
+  const configRef = useRef(config);
+  configRef.current = config;
 
   const menuItems = isZh
     ? [
-        { id: "language", label: `语言: ${draft.language === "zh-CN" ? "中文" : "English"}` },
-        { id: "level", label: `等级: ${draft.level}` },
-        { id: "goal", label: `每日目标: ${draft.dailyGoal}` },
-        { id: "sound", label: `音效: ${draft.soundEnabled ? "开" : "关"}` },
-        { id: "save", label: "保存并返回" },
-        { id: "back", label: "取消" }
+        { id: "language", label: `语言: ${config.language === "zh-CN" ? "中文" : "English"}` },
+        { id: "level", label: `等级: ${config.level}` },
+        { id: "goal", label: `每日目标: ${config.dailyGoal}` },
+        { id: "sound", label: `音效: ${config.soundEnabled ? "开" : "关"}` },
+        { id: "back", label: "返回" }
       ]
     : [
-        { id: "language", label: `Language: ${draft.language}` },
-        { id: "level", label: `Level: ${draft.level}` },
-        { id: "goal", label: `Daily goal: ${draft.dailyGoal}` },
-        { id: "sound", label: `Sound: ${draft.soundEnabled ? "On" : "Off"}` },
-        { id: "save", label: "Save and back" },
-        { id: "back", label: "Cancel" }
+        { id: "language", label: `Language: ${config.language}` },
+        { id: "level", label: `Level: ${config.level}` },
+        { id: "goal", label: `Daily goal: ${config.dailyGoal}` },
+        { id: "sound", label: `Sound: ${config.soundEnabled ? "On" : "Off"}` },
+        { id: "back", label: "Back" }
       ];
 
   useInput((input, key) => {
@@ -66,35 +65,31 @@ export function SettingsScreen({
       }
       if (key.return) {
         const action = menuItems[menuIndex].id;
+        const current = configRef.current;
         if (action === "language") {
-          setDraft((d) => ({
-            ...d,
-            language: d.language === "zh-CN" ? "en" : "zh-CN"
-          }));
-          return;
-        }
-        if (action === "sound") {
-          setDraft((d) => {
-            const next = !d.soundEnabled;
-            if (next) {
-              soundRef.current.playToggleOn();
-            } else {
-              soundRef.current.playToggleOff();
-            }
-            return { ...d, soundEnabled: next };
+          onPersist({
+            ...current,
+            language: current.language === "zh-CN" ? "en" : "zh-CN"
           });
           return;
         }
+        if (action === "sound") {
+          const next = !current.soundEnabled;
+          if (next) {
+            soundRef.current.playToggleOn();
+          } else {
+            soundRef.current.playToggleOff();
+          }
+          onPersist({ ...current, soundEnabled: next });
+          return;
+        }
         if (action === "level") {
+          setLevelIndex(Math.max(0, LEVELS.findIndex((l) => l.id === current.level)));
           setStep("level");
           return;
         }
         if (action === "goal") {
           setStep("goal");
-          return;
-        }
-        if (action === "save") {
-          onSave(draft);
           return;
         }
         if (action === "back") {
@@ -117,7 +112,7 @@ export function SettingsScreen({
         return;
       }
       if (key.return) {
-        setDraft((d) => ({ ...d, level: LEVELS[levelIndex].id }));
+        onPersist({ ...configRef.current, level: LEVELS[levelIndex].id });
         setStep("menu");
       }
       if (key.escape) setStep("menu");
@@ -127,7 +122,7 @@ export function SettingsScreen({
     if (step === "goal") {
       const num = Number(input);
       if (num >= 1 && num <= 9) {
-        setDraft((d) => ({ ...d, dailyGoal: num }));
+        onPersist({ ...configRef.current, dailyGoal: num });
         setStep("menu");
       }
       if (key.escape) setStep("menu");

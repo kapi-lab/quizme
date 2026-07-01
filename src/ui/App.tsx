@@ -101,15 +101,16 @@ export function App({
   }
 
   if (screen === "settings") {
+    const persistConfig = (next: UserConfig) => {
+      store.setConfig("user", next);
+      setConfig(next);
+    };
+
     return (
       <SettingsScreen
         config={config}
         sound={sound}
-        onSave={(next) => {
-          store.setConfig("user", next);
-          setConfig(next);
-          setScreen("home");
-        }}
+        onPersist={persistConfig}
         onBack={() => setScreen("home")}
       />
     );
