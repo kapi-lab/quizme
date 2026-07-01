@@ -27,5 +27,5 @@ node ./src/cli/index.ts inspect-sources
 - 可以通过 `--session /absolute/path/to/file.jsonl` 固定读取某个 transcript。
 - 本地数据存储在平台 app data 目录中，并使用 `sqlite3`。
 - 在受限环境中，存储会 fallback 到 `./.quizme`。也可以通过 `QUIZME_DATA_DIR=/path/to/data` 覆盖数据目录。
-- 题目生成和 `why` 模式会调用本地 `claude` CLI 的 print mode。
+- 题目生成和 `why` 模式会调用本地 `claude` CLI 的 print mode（`--bare` + `--tools ""`，禁用 agent tool；上下文已写入 prompt）。
 - 离线 demo 可使用 `QUIZME_PROVIDER=local`。如果希望优先使用 Claude、失败后 fallback 到本地 provider，可使用 `QUIZME_PROVIDER_FALLBACK=local`。

@@ -291,6 +291,7 @@ QuizMe 的核心差异：
 - 包名和命令名为 `quizme`。
 - 支持中文和 English；首次运行必须让用户选择。
 - 直接扫描用户级 `~/.claude/projects/` 取最新会话；读取或解析失败即报错。
+- 题目生成和 `why` 调用 `claude -p` 时禁用全部 agent tool（`--bare` + `--tools ""`）；上下文由 QuizMe 本地摘要后写入 prompt，模型不再访问文件系统。
 - 不做初始 placement quiz。
 - 用户画像可见，并可通过 settings 手动修正。
 - MVP 不支持 Anki / Markdown 导出。

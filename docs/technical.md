@@ -175,7 +175,38 @@ Claude CLI / agent 调用应使用参数数组，而不是 shell 字符串。
 - 错误分类：可执行文件缺失、超时、非法输出、权限问题、会话解析失败。
 - 给用户清晰修复建议。
 
-Claude provider 协议细节后续再细化，不阻塞当前规划。
+### Claude Provider（`claudeAgent.ts`）
+
+题目生成和 `why` 模式通过 `spawn("claude", ...)` 调用本地 Claude Code CLI 的 print mode（`-p`），而不是引入 `@anthropic-ai/claude-agent-sdk`。
+
+#### 为什么用 spawn 而不是 Agent SDK
+
+- QuizMe 只需要「prompt in → JSON/text out」的单次调用，不需要完整 agent loop（子 agent、MCP、文件编辑、bash 等）。
+- 直接复用用户已安装、已登录的 `claude` CLI，认证和模型偏好沿用 Claude Code 配置。
+- 依赖更轻，超时和进程生命周期更好控制。
+
+Agent SDK 适合需要 tool-use 循环、细粒度 `canUseTool` 回调、或程序化 subagent 的场景；当前 MVP 不需要。
+
+#### Tool 权限：最小权限原则
+
+不带限制的 `claude -p` 会加载与用户交互会话类似的上下文（hooks、skills、MCP、CLAUDE.md 等），模型理论上可调用 Read、Bash、Edit 等内置 tool。这对 QuizMe 是过度权限——上下文已由 QuizMe 本地摘要后写入 prompt，不需要模型再访问文件系统或执行命令。
+
+因此每次 print 调用统一附加：
+
+```text
+--bare          # 跳过 hooks / MCP / CLAUDE.md 自动发现等
+--tools ""      # 禁用全部内置 agent tool
+```
+
+实现位置：`src/providers/claudeAgent.ts` 中的 `CLAUDE_PRINT_SECURITY_ARGS`，由 `runClaude()` 自动前置到所有调用。
+
+说明：
+
+- `--tools ""` 禁用的是内置 agent tool（Read、Bash、Edit 等），不是 `--json-schema` 的结构化输出通道；出题仍通过 `StructuredOutput` 拿 JSON。
+- 「只开放 Read」仍可能读到用户未打算分享的敏感文件；对当前架构，**零 tool** 比「只 Read」更贴合需求。
+- CLI 的 `--allowedTools` 表示自动批准，**不**限制可用 tool；限制可用范围应使用 `--tools` 或 `--disallowedTools`（与 Agent SDK 的 `allowedTools` 语义不同，迁移时需注意）。
+
+若未来需要让模型主动扫仓库出题，再显式放开 `Read` 并配合路径规则（如 `Read(/src/**)`），而不是恢复默认全开。
 
 ## 存储
 
@@ -374,6 +405,7 @@ FSRS 和完整 spaced repetition 后置。
 
 - 首次运行说明读取什么、发送什么、存储什么。
 - 可行时先本地摘要和过滤，再调用模型。
+- 模型调用使用 `--bare` + `--tools ""`，禁止 agent 访问文件系统或执行命令（见 Claude Provider 一节）。
 - 不直接向用户展示最近 20 题内部上下文。
 - 提供 `inspect-sources` 做来源诊断。
 - 提供 settings 数据删除能力。

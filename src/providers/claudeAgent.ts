@@ -158,12 +158,21 @@ function buildWhyPrompt({
   ].join("\n\n");
 }
 
+/**
+ * Print-mode hardening for scripted calls.
+ * - `--bare`: skip hooks, MCP, CLAUDE.md auto-discovery, etc.
+ * - `--tools ""`: disable built-in agent tools (Read/Bash/Edit/...).
+ * Context is already embedded in the prompt; `--json-schema` structured output
+ * is separate from the built-in tool set.
+ */
+const CLAUDE_PRINT_SECURITY_ARGS = ["--bare", "--tools", ""] as const;
+
 async function runClaude(
   args: string[],
   { onEvent, timeout = 120000 }: { onEvent?: (event: ClaudeEvent) => void; timeout?: number } = {}
 ) {
   return new Promise<string>((resolve, reject) => {
-    const child = spawn("claude", args, {
+    const child = spawn("claude", [...CLAUDE_PRINT_SECURITY_ARGS, ...args], {
       stdio: ["ignore", "pipe", "pipe"]
     });
 
