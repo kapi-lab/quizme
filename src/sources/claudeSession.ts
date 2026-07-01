@@ -12,22 +12,6 @@ type SessionPreview = {
   promptPreview: string;
 };
 
-type SessionInspectError = {
-  ok: false;
-  reason: string;
-  searched: string;
-};
-
-type SessionInspectSuccess = {
-  ok: true;
-  searched: string;
-  files: string[];
-  selected: string;
-  preview: SessionPreview;
-};
-
-export type SessionInspection = SessionInspectError | SessionInspectSuccess;
-
 function isObject(value: unknown): value is JsonRecord {
   return value !== null && typeof value === "object";
 }
@@ -102,37 +86,13 @@ function findMostRecentSessionGlobally(): string | null {
   return allFiles.length ? allFiles[0] : null;
 }
 
-export function inspectClaudeSessions(explicitPath: string | null = null): SessionInspection {
-  if (explicitPath) {
-    if (!fs.existsSync(explicitPath)) {
-      return { ok: false, reason: `Session file not found: ${explicitPath}`, searched: explicitPath };
-    }
-    const rows = parseJsonLines(explicitPath);
-    return {
-      ok: true,
-      searched: explicitPath,
-      files: [explicitPath],
-      selected: explicitPath,
-      preview: summarizeRows(rows)
-    };
-  }
-
+function findLatestSessionFile(): string {
   const projectsDir = getClaudeProjectsDir();
   const mostRecent = findMostRecentSessionGlobally();
   if (!mostRecent) {
-    return { ok: false, reason: `No Claude project transcripts found`, searched: projectsDir };
+    throw new Error(`No Claude project transcripts found in ${projectsDir}. Run Claude Code in this repo first, or use --repo / "topic".`);
   }
-
-  const projectDir = path.dirname(mostRecent);
-  const files = listSessionFiles(projectDir);
-
-  return {
-    ok: true,
-    searched: projectsDir,
-    files,
-    selected: mostRecent,
-    preview: summarizeRows(parseJsonLines(mostRecent))
-  };
+  return mostRecent;
 }
 
 export function getClaudeSummaryFromFile(filePath: string, cwd = process.cwd()): SourceSummary {
@@ -165,11 +125,6 @@ export function getClaudeSummaryFromFile(filePath: string, cwd = process.cwd()):
   };
 }
 
-export function getLatestClaudeSummary(cwd = process.cwd(), explicitPath: string | null = null): SourceSummary {
-  const inspection = inspectClaudeSessions(explicitPath);
-  if (!inspection.ok) {
-    throw new Error(`${inspection.reason}. Run Claude Code in this repo first, or use --repo / "topic".`);
-  }
-
-  return getClaudeSummaryFromFile(inspection.selected, cwd);
+export function getLatestClaudeSummary(cwd = process.cwd()): SourceSummary {
+  return getClaudeSummaryFromFile(findLatestSessionFile(), cwd);
 }

@@ -23,7 +23,7 @@ export function App({
 }: {
   store: Store;
   initialConfig: UserConfig;
-  resolveSource: (args: { _: string[]; repo?: string; session?: string }) => SourceSummary;
+  resolveSource: (args: { _: string[]; repo?: string }) => SourceSummary;
   onExit: () => void;
 }) {
   const [config, setConfig] = useState(initialConfig);

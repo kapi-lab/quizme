@@ -12,7 +12,7 @@ export async function runInkHome({
 }: {
   store: Store;
   config: UserConfig;
-  resolveSource: (args: { _: string[]; repo?: string; session?: string }) => SourceSummary;
+  resolveSource: (args: { _: string[]; repo?: string }) => SourceSummary;
 }) {
   const rendered = render(
     <App
