@@ -1,0 +1,28 @@
+src/ui/renderApp.tsx
+  s_03bdb2a0fbc91b::t_5c0cfa4b75ebe4 15
+src/sources/claudeSession.ts
+  s_03bdb2a0fbc91b::t_206a968a2add02 89,93,95
+  s_03bdb2a0fbc91b::t_3e175aa0dbe14d 128-129
+src/ui/App.tsx
+  s_03bdb2a0fbc91b::t_559fd647398e7b 26
+src/cli/index.ts
+  s_03bdb2a0fbc91b::t_101358dfea2d96 4-6,10,55,70
+README.md
+  s_03bdb2a0fbc91b::t_d771b7cf318f64 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "19024af381ba05ca34effedcef45836fce42f873",
+  "prompts": {},
+  "sessions": {
+    "s_03bdb2a0fbc91b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "f15b8ee0-a338-4485-a6a5-677b40a5d300",
+        "model": "composer-2.5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
