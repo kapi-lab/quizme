@@ -1,0 +1,23 @@
+src/ui/screens/SettingsScreen.tsx
+  s_8bae706c53e7b9::t_ea46a16c29811e 35-36,40-44,47-51,68,70-72,77-83,87,115,125
+  s_8bae706c53e7b9::t_81a3ebba02ba3e 73
+  s_8bae706c53e7b9::t_fa95327b15fc8b 19,24
+src/ui/App.tsx
+  s_8bae706c53e7b9::t_a6ee61eb1aa2f0 104-108,113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "54d9fdbe1f546ecd02e180a4a89f6510fe504dd1",
+  "prompts": {},
+  "sessions": {
+    "s_8bae706c53e7b9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "111a1a86-1a91-44b0-a998-ee99b603cee3",
+        "model": "composer-2.5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
