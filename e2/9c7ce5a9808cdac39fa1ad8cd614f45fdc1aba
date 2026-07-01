@@ -1,0 +1,79 @@
+src/ui/formatters.ts
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 4-22,24-39,41-43,45-52,54-60
+  s_1e078651fffd85::t_74c83e3720b5b0 1-3,23,40,44,53
+src/sources/repository.ts
+  s_1e078651fffd85::t_6a734f80eff86f 4,6,13,21
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-3,5,7-12,14-20,22-46
+src/storage/index.ts
+  s_1e078651fffd85::t_134f900db9f9cb 5,7
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-4,6,8-19
+src/platform/paths.ts
+  s_1e078651fffd85::t_d4dff972375f9b 21
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-20,22-34
+package.json
+  s_1e078651fffd85::t_69e1ee7b2814af 7,10,12
+  s_1e078651fffd85::t_d0f2356410facd 11
+src/generation/dedupe.ts
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 4-13
+  s_1e078651fffd85::t_b406df20fec17f 1-3
+src/ui/terminal.ts
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-2,4,6-19,21-33,35-43
+  s_1e078651fffd85::t_e08289c9a00cc3 3,5,20,34
+test/paths.test.ts
+  s_1e078651fffd85::t_a9368c80fc9950 6
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-5,7-11
+src/storage/sqlite.ts
+  s_1e078651fffd85::t_f2ed4029bb2160 11-13,18
+  s_1e078651fffd85::t_3df50e0c285e4b 4,6,25,73,81,83,86,100,106,109-121,135,175,196,272,283,293,300,310
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-3,5,7-10,14-17,19-24,26-72,74-80,82,84-85,87-99,101-105,107-108,122-134,136-174,176-195,197-265,269-271,273-282,284-292,294-299,301-309,311-313
+  s_1e078651fffd85::t_67744f24b83ec5 266-268
+tsconfig.json
+  s_1e078651fffd85::t_fcfb019b6839d7 1-6,8-16
+  s_1e078651fffd85::t_f784a63797d249 7
+README.md
+  s_1e078651fffd85::t_4e2bc96de17172 13-21
+src/providers/localProvider.ts
+  s_1e078651fffd85::t_cc1f4a3c3ff7ef 2,18,37,56,78-80,82,102,104,106
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1,3,16-17,19-36,38-55,57-74,83-91,93-97,107-114
+  s_1e078651fffd85::t_823f5ea3035c85 75-77,81,98-101,103,105
+  s_1e078651fffd85::t_75c3cfbb2f1852 4-15,92
+src/types.ts
+  s_1e078651fffd85::t_9ea5b14c070f7e 93
+  s_1e078651fffd85::t_0b2d4c0adf8fd9 1-92,94-111
+src/providers/claudeProvider.ts
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-4,6,18-33,45-63,65-75,87-117
+  s_1e078651fffd85::t_b559984e70dd44 5,7-17,34-44,64,76-86
+src/sources/topic.ts
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 4-9
+  s_1e078651fffd85::t_dca3f3b6230013 1-3
+src/cli/session.ts
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-2,4,18-26,28-30,32-33
+  s_1e078651fffd85::t_544f38a10ffef0 3,5-17,27,31
+src/platform/fs.ts
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-3,5-7,9,11-15,17-19
+  s_1e078651fffd85::t_8e1ab44a2b84b3 4,8,10,16
+src/ui/sound.ts
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-2,4-5,9-52,55-57,60-66,72,74-75,78,80-89,91-92,94-108
+  s_1e078651fffd85::t_3619a35db770bf 3,6-8,67-71,73,76-77,79,90,93
+  s_1e078651fffd85::t_4f81017b34bdd7 53-54,58-59
+src/generation/schema.ts
+  s_1e078651fffd85::t_15b6ec3ecc2e3e 1-45
+package-lock.json
+  s_1e078651fffd85::t_14a94a56d5bf73 20-24,549-566,699-704,1079-1097
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "e29c7ce5a9808cdac39fa1ad8cd614f45fdc1aba",
+  "prompts": {},
+  "sessions": {
+    "s_1e078651fffd85": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f17f0-6964-7e03-b369-04a453fb7a6e",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
