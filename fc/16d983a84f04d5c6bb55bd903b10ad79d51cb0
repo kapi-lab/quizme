@@ -1,0 +1,48 @@
+src/storage/index.ts
+  s_a3e08916aaf2c9::t_32ef7b476bec47 4,36
+  s_a3e08916aaf2c9::t_8bc97ae0751436 1,7-8,26
+  s_a3e08916aaf2c9::t_757048c6ee7439 2,9-25
+  s_a3e08916aaf2c9::t_e3b65974871dc0 27
+src/ui/screens/QuizScreen.tsx
+  s_a3e08916aaf2c9::t_91091224b27a61 84,109
+  s_a3e08916aaf2c9::t_3d06ee6fd444b2 191
+  s_a3e08916aaf2c9::t_0beebb3aeb932e 142
+src/ui/App.tsx
+  s_a3e08916aaf2c9::t_c997118334273d 67
+test/paths.test.ts
+  s_a3e08916aaf2c9::t_31a821dc3e6b9d 3
+src/providers/claudeAgent.ts
+  s_a3e08916aaf2c9::t_52ca10c6a4159a 321
+  s_a3e08916aaf2c9::t_ad54a4a983fcf3 89
+src/storage/json.ts
+  s_a3e08916aaf2c9::t_c86182e7d8a58d 2
+  s_a3e08916aaf2c9::t_5ecc7911cfb8bb 238-239
+  s_a3e08916aaf2c9::t_2db3d1bfc3ac46 158
+  s_a3e08916aaf2c9::t_d852ad11578eaf 1,3-138,140-157,159-237,240-288
+  s_a3e08916aaf2c9::t_48160f039cdd0b 139
+package.json
+  s_a3e08916aaf2c9::t_ad7eedd0db5189 49
+src/types.ts
+  s_a3e08916aaf2c9::t_64569c745d23ff 95,97,105,108-109
+test/store.test.ts
+  s_a3e08916aaf2c9::t_b79363ddd02ff8 6,9,11,45-56,58,63-71,104,114,129-149,152-156,159,161-163,166-172,174-175
+src/sources/claudeSession.ts
+  s_a3e08916aaf2c9::t_ba451d23aee77f 2,6-8
+  s_a3e08916aaf2c9::t_96d3e352e32869 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "fc16d983a84f04d5c6bb55bd903b10ad79d51cb0",
+  "prompts": {},
+  "sessions": {
+    "s_a3e08916aaf2c9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "77630125-44f3-490b-b260-876ae95141ec",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
