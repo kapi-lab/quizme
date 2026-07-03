@@ -1,0 +1,28 @@
+package.json
+  s_846090be4abc09::t_8d2d87c6a2ff81 19,26
+  s_846090be4abc09::t_b1139b23e394dc 11
+  s_846090be4abc09::t_4fd8ce26f2dc55 31-34
+src/storage/sqlite.ts
+  s_846090be4abc09::t_d36a60167f292b 1,13-17,20-21,26-27,30-36,40,94-98,102-105,109-118,122-127,143-152,158-183,187-206,210-261,291,295,300-307,311-317,321-324,328-338,342-349,353,357,361,368,372,376,387-391
+test/store.test.ts
+  s_846090be4abc09::t_44f69c7247501b 1-65,68-151
+  s_846090be4abc09::t_d1fff9cc5ea684 66-67
+pnpm-lock.yaml
+  s_846090be4abc09::t_f06a60369a1004 1-1057
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "da71acf7bcd419057ee82424e5e50f32fdfd2fff",
+  "prompts": {},
+  "sessions": {
+    "s_846090be4abc09": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5d34bab6-a9c2-433b-b267-59377d57528c",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
