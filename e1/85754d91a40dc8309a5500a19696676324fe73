@@ -1,0 +1,40 @@
+src/types.ts
+  s_e66835efa9bec8::t_4e2b5c2370e28c 5-7
+  s_e66835efa9bec8::t_73761356341f64 42-48
+src/ui/screens/SettingsScreen.tsx
+  s_e66835efa9bec8::t_8d51e254abbd99 134-147
+  s_e66835efa9bec8::t_b5a25470c8711f 7,16-29
+  s_e66835efa9bec8::t_ff32549f7296af 195-235
+  s_e66835efa9bec8::t_f47aec96fce004 266-314
+  s_e66835efa9bec8::t_d38abd7da9c8ca 69-76,85-92
+  s_e66835efa9bec8::t_b21baf8975bb51 45-47,52-57
+  s_e66835efa9bec8::t_d43c113b763439 30
+src/providers/claudeAgent.ts
+  s_e66835efa9bec8::t_f71ce73fe2a879 9
+  s_e66835efa9bec8::t_bd89d9179be504 156-195
+  s_e66835efa9bec8::t_940232178d8dd8 306-307
+  s_e66835efa9bec8::t_55c8b6ffaecc15 456
+  s_e66835efa9bec8::t_b015bd09e22f0a 506
+README.md
+  s_e66835efa9bec8::t_78e08e750ffd44 75
+  s_e66835efa9bec8::t_bf96127a26730c 42-69
+src/cli/config.ts
+  s_e66835efa9bec8::t_eeb23a4c6d570f 35-39,45-47
+  s_e66835efa9bec8::t_b91e91c9589daf 2-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e185754d91a40dc8309a5500a19696676324fe73",
+  "prompts": {},
+  "sessions": {
+    "s_e66835efa9bec8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "47c56fd7-0a84-4a88-84be-6a3b8f67b53a",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
