@@ -3,7 +3,7 @@ export const QUESTION_SCHEMA = {
   properties: {
     questions: {
       type: "array",
-      minItems: 3,
+      minItems: 5,
       maxItems: 5,
       items: {
         type: "object",

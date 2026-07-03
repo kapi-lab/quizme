@@ -4,6 +4,8 @@ import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { QUESTION_SCHEMA } from "../generation/schema.js";
+import { buildQuizPrompt } from "../generation/prompts/quiz.js";
+import { buildWhyPrompt } from "../generation/prompts/why.js";
 import { validateQuestions } from "../generation/validator.js";
 import type {
   ClaudeEffort,
@@ -68,80 +70,6 @@ function extractQuestionsPayload(value: unknown): { questions?: unknown[] } | nu
     return null;
   }
   return Array.isArray(value.questions) ? (value as { questions?: unknown[] }) : null;
-}
-
-function summarizeSignals(signals: ProfileSignal[]): string {
-  if (!signals.length) return "None yet.";
-  const strongest = [...signals].sort((a, b) => b.score - a.score).slice(0, 5);
-  const weakest = [...signals]
-    .filter((s) => s.wrongCount > 0)
-    .sort((a, b) => a.score - b.score || b.wrongCount - a.wrongCount)
-    .slice(0, 5);
-  const format = (s: ProfileSignal) =>
-    `${s.tag}(score=${s.score.toFixed(2)}, conf=${s.confidence.toFixed(2)}, +${s.correctCount}/-${s.wrongCount})`;
-  return [
-    `Strong: ${strongest.map(format).join(", ") || "none"}`,
-    `Weak: ${weakest.map(format).join(", ") || "none"}`
-  ].join("\n");
-}
-
-function buildQuizPrompt({
-  source,
-  config,
-  recentQuestions,
-  mode,
-  signals
-}: {
-  source: SourceSummary;
-  config: UserConfig;
-  recentQuestions: QuizQuestion[];
-  mode: QuizMode;
-  signals: ProfileSignal[];
-}) {
-  return [
-    "You are QuizMe, a CLI technical interview quiz generator for developers.",
-    "Return strict JSON only, matching the provided schema.",
-    "Generate 3 to 5 multiple-choice questions with exactly 4 choices (ids A, B, C, D) and exactly one best answer.",
-    "Every question MUST include a `sourceMode` field, one of: contextual (about the session/repo), adjacent (related tools/frameworks/concepts), interview_style (evergreen interview knowledge).",
-    "Target mix across the batch: ~40% contextual, ~40% adjacent, ~20% interview_style.",
-    "Every question MUST include a `whyWrong` object with a short reason for each non-answer choice id.",
-    "Focus on engineering judgment, debugging, tradeoffs, and code review reasoning — not trivia.",
-    "Weight the batch toward the user's weak areas from profile signals below; keep a small share of strong-area questions for positive reinforcement.",
-    `User level: ${config.level}`,
-    `Language for questions and explanations: ${config.language}`,
-    `Mode: ${mode}`,
-    "Profile signals:",
-    summarizeSignals(signals),
-    "Recent questions to avoid repeating (topic:question pairs):",
-    JSON.stringify(recentQuestions.slice(0, 20).map((q) => ({ topic: q.topic, question: q.question }))),
-    "Source context summary:",
-    source.summary
-  ].join("\n\n");
-}
-
-function buildWhyPrompt({
-  question,
-  config,
-  asked,
-  userAnswer
-}: {
-  question: QuizQuestion;
-  config: UserConfig;
-  asked: string;
-  userAnswer: string;
-}) {
-  return [
-    "You are QuizMe in why mode — an expert technical tutor.",
-    `Language: ${config.language}`,
-    `User level: ${config.level}`,
-    `Question: ${question.question}`,
-    `Choices: ${JSON.stringify(question.choices)}`,
-    `Correct answer: ${question.answer}`,
-    `User selected: ${userAnswer}`,
-    `Initial explanation: ${question.explanation}`,
-    `User follow-up question: ${asked}`,
-    "Provide a concise, concrete explanation. Explain why the correct answer is right, why each wrong option is weaker, and connect the concept to practical engineering work. Stay focused on this question — do not become a general tutor."
-  ].join("\n\n");
 }
 
 /**
