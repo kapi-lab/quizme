@@ -1,0 +1,35 @@
+src/providers/claudeAgent.ts
+  s_39413c9a03f139::t_af9857749657c1 7-8
+src/generation/schema.ts
+  s_39413c9a03f139::t_93d1c58da5b595 6
+src/generation/prompts/quiz.ts
+  s_39413c9a03f139::t_d6555fbdcf7ba4 1-18,21,26-79
+  s_39413c9a03f139::t_0d19800ffed42a 19-20
+  s_39413c9a03f139::t_d534cb07e48d4b 22-25
+src/generation/prompts/why.ts
+  s_39413c9a03f139::t_b74ba250ca5c77 1-43
+src/sources/claudeSession.ts
+  s_39413c9a03f139::t_e76c7dcacbd987 1,75,77-82,85,87,100-111,113-117,150-196,198-207
+  s_39413c9a03f139::t_dc57b4113ee3c4 76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e0004195eee8a725cc5966a82e45394a06492ce7",
+  "prompts": {},
+  "humans": {
+    "h_cecc0e4bd55260": {
+      "author": "jingyuan <zjingyuan@trip.com>"
+    }
+  },
+  "sessions": {
+    "s_39413c9a03f139": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f1605a63-5db5-4f39-a0a5-8ea456af623b",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
