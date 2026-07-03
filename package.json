@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node --import tsx ./src/cli/index.ts",
-    "test": "node --import tsx --test test/paths.test.ts test/validator.test.ts",
+    "test": "node --import tsx --test test/paths.test.ts test/validator.test.ts test/store.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
@@ -16,15 +16,20 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.195",
+    "better-sqlite3": "^12.11.1",
     "ink": "^5.2.1",
     "react": "^18.3.1",
     "tsx": "^4.22.4"
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",
     "typescript": "^6.0.3"
   },
-  "packageManager": "pnpm@10.28.1+sha512.7d7dbbca9e99447b7c3bf7a73286afaaf6be99251eb9498baefa7d406892f67b879adb3a1d7e687fc4ccc1a388c7175fbaae567a26ab44d1067b54fcb0d6a316"
+  "packageManager": "pnpm@10.28.1+sha512.7d7dbbca9e99447b7c3bf7a73286afaaf6be99251eb9498baefa7d406892f67b879adb3a1d7e687fc4ccc1a388c7175fbaae567a26ab44d1067b54fcb0d6a316",
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3"]
+  }
 }

@@ -99,7 +99,6 @@ export interface SoundPlayer {
 
 export interface Store {
   init(): void;
-  exec(sql: string): string;
   setConfig(key: string, value: unknown): void;
   getConfig<T>(key: string, fallback?: T | null): T | null;
   saveQuestion(question: QuizQuestion, sourceType: string): void;

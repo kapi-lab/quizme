@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import Database from "better-sqlite3";
 import path from "node:path";
 import { ensureDir } from "../platform/fs.js";
 import type {
@@ -10,27 +10,34 @@ import type {
   WhyTurn
 } from "../types.js";
 
-function shellQuote(value: unknown): string {
-  return `'${String(value).replace(/'/g, "''")}'`;
-}
-
+/**
+ * SQLite-backed store. Uses `better-sqlite3` (synchronous, in-process) instead
+ * of shelling out to the `sqlite3` CLI — eliminates a subprocess spawn per
+ * query and removes the external binary dependency.
+ */
 export class SqliteStore {
   dbPath: string;
+  private db: Database.Database;
+  private stmtCache = new Map<string, Database.Statement>();
 
   constructor(dbPath: string) {
     this.dbPath = dbPath;
     ensureDir(path.dirname(dbPath));
+    this.db = new Database(dbPath);
+    this.db.pragma("busy_timeout = 5000");
   }
 
-  exec(sql: string) {
-    return execFileSync("sqlite3", [this.dbPath, sql], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"]
-    }).trim();
+  private stmt(sql: string): Database.Statement {
+    let prepared = this.stmtCache.get(sql);
+    if (!prepared) {
+      prepared = this.db.prepare(sql);
+      this.stmtCache.set(sql, prepared);
+    }
+    return prepared;
   }
 
   init(): void {
-    this.exec(`
+    this.db.exec(`
       PRAGMA busy_timeout=5000;
       CREATE TABLE IF NOT EXISTS config (
         key TEXT PRIMARY KEY,
@@ -84,39 +91,40 @@ export class SqliteStore {
   }
 
   setConfig(key: string, value: unknown): void {
-    this.exec(`
-      INSERT INTO config(key, value_json)
-      VALUES (${shellQuote(key)}, ${shellQuote(JSON.stringify(value))})
-      ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json;
-    `);
+    this.stmt(
+      `INSERT INTO config(key, value_json)
+       VALUES (@key, @value)
+       ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json;`
+    ).run({ key, value: JSON.stringify(value) });
   }
 
   getConfig<T>(key: string, fallback: T | null = null): T | null {
-    const output = this.exec(`SELECT value_json FROM config WHERE key=${shellQuote(key)} LIMIT 1;`);
-    return output ? (JSON.parse(output) as T) : fallback;
+    const row = this.stmt(`SELECT value_json FROM config WHERE key=@key LIMIT 1;`).get({ key }) as
+      | { value_json: string }
+      | undefined;
+    return row ? (JSON.parse(row.value_json) as T) : fallback;
   }
 
   saveQuestion(question: QuizQuestion, sourceType: string): void {
-    this.exec(`
-      INSERT OR REPLACE INTO questions(id, source_type, topic, difficulty, payload_json, created_at)
-      VALUES (
-        ${shellQuote(question.id)},
-        ${shellQuote(sourceType)},
-        ${shellQuote(question.topic)},
-        ${Number(question.difficulty || 1)},
-        ${shellQuote(JSON.stringify(question))},
-        datetime('now')
-      );
-    `);
+    this.stmt(
+      `INSERT OR REPLACE INTO questions(id, source_type, topic, difficulty, payload_json, created_at)
+       VALUES (@id, @sourceType, @topic, @difficulty, @payload, datetime('now'));`
+    ).run({
+      id: question.id,
+      sourceType,
+      topic: question.topic,
+      difficulty: Number(question.difficulty || 1),
+      payload: JSON.stringify(question)
+    });
   }
 
   listRecentQuestions(limit = 20): QuizQuestion[] {
-    const output = this.exec(`
-      SELECT payload_json FROM questions
-      ORDER BY datetime(created_at) DESC
-      LIMIT ${Number(limit)};
-    `);
-    return output ? output.split("\n").filter(Boolean).map((line) => JSON.parse(line) as QuizQuestion) : [];
+    const rows = this.stmt(
+      `SELECT payload_json FROM questions
+       ORDER BY datetime(created_at) DESC
+       LIMIT @limit;`
+    ).all({ limit: Number(limit) }) as Array<{ payload_json: string }>;
+    return rows.map((row) => JSON.parse(row.payload_json) as QuizQuestion);
   }
 
   recordAttempt({
@@ -132,118 +140,126 @@ export class SqliteStore {
     durationMs: number;
     tags: string[];
   }): void {
-    this.exec(`
-      INSERT INTO attempts(question_id, selected, correct, duration_ms, tags_json, created_at)
-      VALUES (
-        ${shellQuote(questionId)},
-        ${shellQuote(selected)},
-        ${correct ? 1 : 0},
-        ${Number(durationMs)},
-        ${shellQuote(JSON.stringify(tags || []))},
-        datetime('now')
-      );
-    `);
+    this.stmt(
+      `INSERT INTO attempts(question_id, selected, correct, duration_ms, tags_json, created_at)
+       VALUES (@questionId, @selected, @correct, @durationMs, @tags, datetime('now'));`
+    ).run({
+      questionId,
+      selected,
+      correct: correct ? 1 : 0,
+      durationMs: Number(durationMs),
+      tags: JSON.stringify(tags || [])
+    });
   }
 
   updateSignal(tag: string, wasCorrect: boolean): void {
-    const row = this.exec(`
-      SELECT score, confidence, correct_count, wrong_count
-      FROM profile_signals WHERE tag=${shellQuote(tag)} LIMIT 1;
-    `);
-    let score = 0.5;
-    let confidence = 0.2;
-    let correctCount = 0;
-    let wrongCount = 0;
-    if (row) {
-      [score, confidence, correctCount, wrongCount] = row.split("|").map(Number);
-    }
-
-    correctCount += wasCorrect ? 1 : 0;
-    wrongCount += wasCorrect ? 0 : 1;
     const delta = wasCorrect ? 0.08 : -0.1;
-    const nextScore = Math.max(0.05, Math.min(0.95, score + delta));
-    const nextConfidence = Math.min(0.98, confidence + 0.08);
     const trend = delta > 0 ? "up" : "down";
-    this.exec(`
-      INSERT INTO profile_signals(tag, score, confidence, trend, correct_count, wrong_count, updated_at)
-      VALUES (
-        ${shellQuote(tag)},
-        ${nextScore},
-        ${nextConfidence},
-        ${shellQuote(trend)},
-        ${correctCount},
-        ${wrongCount},
-        datetime('now')
-      )
-      ON CONFLICT(tag) DO UPDATE SET
-        score=excluded.score,
-        confidence=excluded.confidence,
-        trend=excluded.trend,
-        correct_count=excluded.correct_count,
-        wrong_count=excluded.wrong_count,
-        updated_at=excluded.updated_at;
-    `);
+    // Single atomic UPSERT: read current values via subquery, clamp, write back.
+    this.stmt(
+      `INSERT INTO profile_signals(tag, score, confidence, trend, correct_count, wrong_count, updated_at)
+       VALUES (
+         @tag,
+         MIN(0.95, MAX(0.05, COALESCE((SELECT score FROM profile_signals WHERE tag=@tag), 0.5) + @delta)),
+         MIN(0.98, COALESCE((SELECT confidence FROM profile_signals WHERE tag=@tag), 0.2) + 0.08),
+         @trend,
+         COALESCE((SELECT correct_count FROM profile_signals WHERE tag=@tag), 0) + @correctInc,
+         COALESCE((SELECT wrong_count FROM profile_signals WHERE tag=@tag), 0) + @wrongInc,
+         datetime('now')
+       )
+       ON CONFLICT(tag) DO UPDATE SET
+         score=excluded.score,
+         confidence=excluded.confidence,
+         trend=excluded.trend,
+         correct_count=excluded.correct_count,
+         wrong_count=excluded.wrong_count,
+         updated_at=excluded.updated_at;`
+    ).run({
+      tag,
+      delta,
+      trend,
+      correctInc: wasCorrect ? 1 : 0,
+      wrongInc: wasCorrect ? 0 : 1
+    });
   }
 
   getProfileSignals(): ProfileSignal[] {
-    const output = this.exec(`
-      SELECT tag, score, confidence, trend, correct_count, wrong_count
-      FROM profile_signals
-      ORDER BY score DESC, confidence DESC;
-    `);
-    return output
-      ? output.split("\n").filter(Boolean).map((line) => {
-          const [tag, score, confidence, trend, correctCount, wrongCount] = line.split("|");
-          return {
-            tag,
-            score: Number(score),
-            confidence: Number(confidence),
-            trend,
-            correctCount: Number(correctCount),
-            wrongCount: Number(wrongCount)
-          };
-        })
-      : [];
+    const rows = this.stmt(
+      `SELECT tag, score, confidence, trend, correct_count, wrong_count
+       FROM profile_signals
+       ORDER BY score DESC, confidence DESC;`
+    ).all() as Array<{
+      tag: string;
+      score: number;
+      confidence: number;
+      trend: string;
+      correct_count: number;
+      wrong_count: number;
+    }>;
+    return rows.map((row) => ({
+      tag: row.tag,
+      score: row.score,
+      confidence: row.confidence,
+      trend: row.trend,
+      correctCount: row.correct_count,
+      wrongCount: row.wrong_count
+    }));
   }
 
   getStats(): Stats {
-    const attemptsTotal = Number(this.exec("SELECT COUNT(*) FROM attempts;") || 0);
-    const attemptsCorrect = Number(this.exec("SELECT COUNT(*) FROM attempts WHERE correct=1;") || 0);
-    const todayCount = Number(this.exec("SELECT COUNT(*) FROM attempts WHERE date(created_at)=date('now','localtime');") || 0);
-    const reviewPending = Number(this.exec("SELECT COUNT(*) FROM review_items WHERE resolved=0;") || 0);
-    const whyCount = Number(this.exec("SELECT COUNT(*) FROM why_threads;") || 0);
-    const distinctDays = this.exec(`
-      SELECT DISTINCT date(created_at, 'localtime')
-      FROM attempts
-      ORDER BY date(created_at, 'localtime') DESC;
-    `);
-    const weekRows = this.exec(`
-      SELECT date(created_at, 'localtime'), COUNT(*)
-      FROM attempts
-      WHERE datetime(created_at) >= datetime('now', '-6 day', 'localtime')
-      GROUP BY 1
-      ORDER BY 1;
-    `);
-    const longestStreak = this.exec(`
-      WITH days AS (
-        SELECT DISTINCT date(created_at, 'localtime') AS day
-        FROM attempts
-      ),
-      streaks AS (
-        SELECT
-          day,
-          julianday(day) - ROW_NUMBER() OVER (ORDER BY day) AS grp
-        FROM days
-      )
-      SELECT COALESCE(MAX(cnt), 0)
-      FROM (
-        SELECT COUNT(*) AS cnt
-        FROM streaks
-        GROUP BY grp
-      );
-    `);
+    const counts = this.stmt(
+      `SELECT
+         (SELECT COUNT(*) FROM attempts) AS total,
+         (SELECT COUNT(*) FROM attempts WHERE correct=1) AS correct,
+         (SELECT COUNT(*) FROM attempts WHERE date(created_at)=date('now','localtime')) AS today,
+         (SELECT COUNT(*) FROM review_items WHERE resolved=0) AS reviewPending,
+         (SELECT COUNT(*) FROM why_threads) AS whyCount;`
+    ).get() as {
+      total: number;
+      correct: number;
+      today: number;
+      reviewPending: number;
+      whyCount: number;
+    };
 
-    const dayList = distinctDays ? distinctDays.split("\n").filter(Boolean) : [];
+    const dayList = (
+      this.stmt(
+        `SELECT DISTINCT date(created_at, 'localtime') AS day
+         FROM attempts
+         ORDER BY day DESC;`
+      ).all() as Array<{ day: string }>
+    ).map((row) => row.day);
+
+    const weekRows = (
+      this.stmt(
+        `SELECT date(created_at, 'localtime') AS day, COUNT(*) AS count
+         FROM attempts
+         WHERE datetime(created_at) >= datetime('now', '-6 day', 'localtime')
+         GROUP BY day
+         ORDER BY day;`
+      ).all() as Array<{ day: string; count: number }>
+    ).map((row) => [row.day, String(row.count)] as [string, string]);
+
+    const longest = this.stmt(
+      `WITH days AS (
+         SELECT DISTINCT date(created_at, 'localtime') AS day FROM attempts
+       ),
+       streaks AS (
+         SELECT
+           day,
+           julianday(day) - ROW_NUMBER() OVER (ORDER BY day) AS grp
+         FROM days
+       )
+       SELECT COALESCE(MAX(cnt), 0) AS cnt
+       FROM (SELECT COUNT(*) AS cnt FROM streaks GROUP BY grp);`
+    ).get() as { cnt: number };
+
+    const attemptsTotal = Number(counts?.total ?? 0);
+    const attemptsCorrect = Number(counts?.correct ?? 0);
+    const todayCount = Number(counts?.today ?? 0);
+    const reviewPending = Number(counts?.reviewPending ?? 0);
+    const whyCount = Number(counts?.whyCount ?? 0);
+
     let currentStreak = 0;
     let cursor = new Date();
     for (const day of dayList) {
@@ -272,103 +288,92 @@ export class SqliteStore {
       reviewPending,
       whyCount,
       currentStreak,
-      longestStreak: Number(longestStreak || 0),
+      longestStreak: Number(longest?.cnt ?? 0),
       xp,
       level,
       accuracy: attemptsTotal ? attemptsCorrect / attemptsTotal : 0,
-      weekRows: weekRows
-        ? weekRows.split("\n").filter(Boolean).map((line) => line.split("|") as [string, string])
-        : []
+      weekRows
     };
   }
 
   upsertReviewItem(questionId: string, resolved: boolean): void {
-    this.exec(`
-      INSERT INTO review_items(question_id, resolved, last_result, updated_at)
-      VALUES (${shellQuote(questionId)}, ${resolved ? 1 : 0}, ${resolved ? 1 : 0}, datetime('now'))
-      ON CONFLICT(question_id) DO UPDATE SET
-        resolved=excluded.resolved,
-        last_result=excluded.last_result,
-        updated_at=excluded.updated_at;
-    `);
+    this.stmt(
+      `INSERT INTO review_items(question_id, resolved, last_result, updated_at)
+       VALUES (@questionId, @resolved, @lastResult, datetime('now'))
+       ON CONFLICT(question_id) DO UPDATE SET
+         resolved=excluded.resolved,
+         last_result=excluded.last_result,
+         updated_at=excluded.updated_at;`
+    ).run({ questionId, resolved: resolved ? 1 : 0, lastResult: resolved ? 1 : 0 });
   }
 
   listReviewQuestionIds(limit = 5): string[] {
-    const output = this.exec(`
-      SELECT question_id FROM review_items
-      WHERE resolved=0
-      ORDER BY datetime(updated_at) DESC
-      LIMIT ${Number(limit)};
-    `);
-    return output ? output.split("\n").filter(Boolean) : [];
+    const rows = this.stmt(
+      `SELECT question_id FROM review_items
+       WHERE resolved=0
+       ORDER BY datetime(updated_at) DESC
+       LIMIT @limit;`
+    ).all({ limit: Number(limit) }) as Array<{ question_id: string }>;
+    return rows.map((row) => row.question_id);
   }
 
   appendWhyThread(questionId: string, turns: WhyTurn[]): void {
-    this.exec(`
-      INSERT INTO why_threads(question_id, turns_json, updated_at)
-      VALUES (${shellQuote(questionId)}, ${shellQuote(JSON.stringify(turns))}, datetime('now'));
-    `);
+    this.stmt(
+      `INSERT INTO why_threads(question_id, turns_json, updated_at)
+       VALUES (@questionId, @turns, datetime('now'));`
+    ).run({ questionId, turns: JSON.stringify(turns) });
   }
 
   listProfilePreferences(): ProfilePreference[] {
-    const output = this.exec(`
-      SELECT tag, kind, note, updated_at
-      FROM profile_preferences
-      ORDER BY datetime(updated_at) DESC;
-    `);
-    if (!output) return [];
-    return output.split("\n").filter(Boolean).map((line) => {
-      const [tag, kind, note, updatedAt] = line.split("|");
-      return {
-        tag,
-        kind: kind as ProfilePreferenceKind,
-        note: note || undefined,
-        updatedAt
-      };
-    });
+    const rows = this.stmt(
+      `SELECT tag, kind, note, updated_at
+       FROM profile_preferences
+       ORDER BY datetime(updated_at) DESC;`
+    ).all() as Array<{ tag: string; kind: string; note: string; updated_at: string }>;
+    return rows.map((row) => ({
+      tag: row.tag,
+      kind: row.kind as ProfilePreferenceKind,
+      note: row.note || undefined,
+      updatedAt: row.updated_at
+    }));
   }
 
   upsertProfilePreference(pref: { tag: string; kind: ProfilePreferenceKind; note?: string }): void {
-    this.exec(`
-      INSERT INTO profile_preferences(tag, kind, note, updated_at)
-      VALUES (
-        ${shellQuote(pref.tag)},
-        ${shellQuote(pref.kind)},
-        ${shellQuote(pref.note ?? "")},
-        datetime('now')
-      )
-      ON CONFLICT(tag) DO UPDATE SET
-        kind=excluded.kind,
-        note=excluded.note,
-        updated_at=excluded.updated_at;
-    `);
+    this.stmt(
+      `INSERT INTO profile_preferences(tag, kind, note, updated_at)
+       VALUES (@tag, @kind, @note, datetime('now'))
+       ON CONFLICT(tag) DO UPDATE SET
+         kind=excluded.kind,
+         note=excluded.note,
+         updated_at=excluded.updated_at;`
+    ).run({ tag: pref.tag, kind: pref.kind, note: pref.note ?? "" });
   }
 
   deleteProfilePreference(tag: string): void {
-    this.exec(`DELETE FROM profile_preferences WHERE tag=${shellQuote(tag)};`);
+    this.stmt(`DELETE FROM profile_preferences WHERE tag=@tag;`).run({ tag });
   }
 
   clearProfilePreferences(): void {
-    this.exec("DELETE FROM profile_preferences;");
+    this.db.exec("DELETE FROM profile_preferences;");
   }
 
   clearAttemptHistory(): void {
-    this.exec(`
+    this.db.exec(`
       DELETE FROM attempts;
       DELETE FROM review_items;
     `);
   }
 
   clearProfileSignals(): void {
-    this.exec("DELETE FROM profile_signals;");
+    this.db.exec("DELETE FROM profile_signals;");
   }
 
   clearQuestionBank(): void {
-    this.exec("DELETE FROM questions;");
+    this.db.exec("DELETE FROM questions;");
   }
 
   clearAll(): void {
-    this.exec(`
+    this.db.exec(`
       DELETE FROM attempts;
       DELETE FROM questions;
       DELETE FROM profile_signals;
@@ -379,6 +384,10 @@ export class SqliteStore {
   }
 
   clearWhyThreads(): void {
-    this.exec("DELETE FROM why_threads;");
+    this.db.exec("DELETE FROM why_threads;");
+  }
+
+  close(): void {
+    this.db.close();
   }
 }
