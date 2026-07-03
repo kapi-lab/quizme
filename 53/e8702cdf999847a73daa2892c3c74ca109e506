@@ -1,0 +1,42 @@
+src/ui/formatters.ts
+  s_1df506a08a5199::t_8f1e7c2e59671f 3,5-17
+  s_1df506a08a5199::t_7426c8eac51544 1
+  s_1df506a08a5199::t_2740c8fd386637 4
+  s_1df506a08a5199::t_6cd2eae59ba78e 2
+src/ui/App.tsx
+  s_1df506a08a5199::t_59b23b0137498b 36-46
+  s_1df506a08a5199::t_bd0c7e23660bf3 167
+src/ui/textUtils.ts
+  s_1df506a08a5199::t_7cc64c420f8d3d 8-51
+src/ui/screens/HomeScreen.tsx
+  s_1df506a08a5199::t_30d59926a7852e 7
+  s_1df506a08a5199::t_c6d8d0fbfd5480 14,20
+  s_1df506a08a5199::t_3791cad4b9ab1d 72
+src/ui/logoLayout.ts
+  s_1df506a08a5199::t_df547eaf9b20dc 50-51
+src/ui/components/WelcomeBanner.tsx
+  s_1df506a08a5199::t_b5c432c8ae969d 16-27,29-32,35-39,42-46,50-51,54-57,60-63,67
+  s_1df506a08a5199::t_7bbd076c42c556 74-75,79,86-91
+  s_1df506a08a5199::t_2ac413fdb9434a 12,14
+  s_1df506a08a5199::t_24d93ba152a0df 110
+  s_1df506a08a5199::t_a0f4b1ea6cbd8c 121-130
+  s_1df506a08a5199::t_5999fdb8f1ee55 70-71
+  s_1df506a08a5199::t_78e81af97ccef8 10
+  s_1df506a08a5199::t_76e8185c3d94b1 94-98,101-102,107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "53e8702cdf999847a73daa2892c3c74ca109e506",
+  "prompts": {},
+  "sessions": {
+    "s_1df506a08a5199": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "402a40ac-6f15-4753-85f3-57ed72993aa6",
+        "model": "composer-2.5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
