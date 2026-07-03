@@ -1,13 +1,15 @@
 {
   "name": "@jiy/quizme",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Interactive CLI quiz practice for developers using Claude Code context.",
   "type": "module",
   "bin": {
     "quizme": "./dist/cli/index.js"
   },
   "main": "./dist/cli/index.js",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "node --import tsx ./src/cli/index.ts",
     "build": "tsc -p tsconfig.build.json",
