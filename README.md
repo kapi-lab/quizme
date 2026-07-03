@@ -39,10 +39,37 @@ quizme --repo .
 quizme "React rendering and caching"
 ```
 
+## 配置
+
+### 交互式设置（持久化）
+
+首次运行会引导选择语言与等级；运行中进入「设置」页可调整以下项，改动写入本地配置：
+
+| 项 | 说明 | 可选值 |
+| --- | --- | --- |
+| 语言 | 题目与解释语言 | 中文 / English |
+| 等级 | 题目难度定位 | Junior / Mid / Senior / Staff+ |
+| 每日目标 | 每日题目数 | 1–9 |
+| 音效 | 答题音效开关 | 开 / 关 |
+| 题目模型 | 生成题目时传给 `claude --model` 的别名 | Haiku（默认，快）/ Sonnet / Opus / 账号默认 |
+| 题目 Effort | 生成题目时传给 `claude --effort` 的等级 | Low（默认）/ Medium / High / xHigh / Max |
+
+> 默认 `Haiku` + `Low`：题目生成本质是结构化 JSON 输出，Haiku/low 足够且明显更快、更省。需要更高质量时可在设置页临时调高。
+
+### 环境变量
+
+| 变量 | 作用 |
+| --- | --- |
+| `QUIZME_CLAUDE_BIN` | 指定 `claude` 可执行文件的绝对路径（PATH 找不到时使用） |
+| `QUIZME_DATA_DIR` | 覆盖本地数据存储目录；不设时使用平台 app data 目录，受限环境 fallback 到 `./.quizme` |
+| `QUIZME_CLAUDE_WHY_MODEL` | `why` 模式（答错后深度讲解）使用的模型别名；不设则走账号默认模型 |
+| `QUIZME_CLAUDE_WHY_EFFORT` | `why` 模式的 effort 等级（`low`/`medium`/`high`/`xhigh`/`max`）；不设则走默认 |
+
+> `why` 模式刻意与题目生成分开配置：讲解对模型质量更敏感，默认保持账号模型；仅当想全局降级/提速时才设这两个变量。
+
 ## 说明
 
 - 默认模式会从 `~/.claude/projects` 读取当前仓库最近的 Claude Code transcript。统计、档案、设置、复习等功能通过交互式主界面进入。
 - 本地数据存储在平台 app data 目录中，并使用 `sqlite3`。
-- 在受限环境中，存储会 fallback 到 `./.quizme`。也可以通过 `QUIZME_DATA_DIR=/path/to/data` 覆盖数据目录。
 - 题目生成和 `why` 模式会调用本地 `claude` CLI 的 print mode（`--bare` + `--tools ""`，禁用 agent tool；上下文已写入 prompt）。
-- 离线 demo 可使用 `QUIZME_PROVIDER=local`。如果希望优先使用 Claude、失败后 fallback 到本地 provider，可使用 `QUIZME_PROVIDER_FALLBACK=local`。
+- 离线 provider（`QUIZME_PROVIDER=local`、`QUIZME_PROVIDER_FALLBACK=local`）为**暂未实现**的能力，当前不可用。

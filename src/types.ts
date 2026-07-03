@@ -2,6 +2,9 @@ export type Language = "zh-CN" | "en";
 export type Level = "junior" | "mid" | "senior" | "staff";
 export type QuizMode = "mixed" | "review";
 
+/** Effort levels accepted by the `claude` CLI `--effort` flag. */
+export type ClaudeEffort = "low" | "medium" | "high" | "xhigh" | "max";
+
 export type SourceType = "manual" | "topic" | "repo" | "claude_session";
 export type QuestionSourceMode = "contextual" | "adjacent" | "interview_style";
 
@@ -36,6 +39,13 @@ export interface UserConfig {
   dailyGoal: number;
   soundEnabled: boolean;
   createdAt: string;
+  /**
+   * Model alias passed to `claude --model` for quiz generation
+   * (e.g. "haiku", "sonnet", "opus"). Empty/undefined = account default.
+   */
+  claudeModel?: string;
+  /** Effort level passed to `claude --effort` for quiz generation. */
+  claudeEffort?: ClaudeEffort;
 }
 
 export interface AnswerResult {

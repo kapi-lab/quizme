@@ -6,6 +6,7 @@ import path from "node:path";
 import { QUESTION_SCHEMA } from "../generation/schema.js";
 import { validateQuestions } from "../generation/validator.js";
 import type {
+  ClaudeEffort,
   ProfileSignal,
   QuizMode,
   QuizQuestion,
@@ -153,6 +154,46 @@ function buildWhyPrompt({
 const CLAUDE_PRINT_SECURITY_ARGS = ["--bare", "--tools", ""] as const;
 
 /**
+ * Effort levels accepted by `claude --effort`. Anything outside this set is
+ * ignored so a stray config value never produces an invalid CLI flag.
+ */
+const VALID_EFFORTS: ReadonlySet<ClaudeEffort> = new Set([
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max"
+]);
+
+/**
+ * Build the `--model` / `--effort` flag pair for a `claude` print-mode call.
+ * Empty/unknown values are dropped so we never pass an invalid flag — the
+ * account default model/effort applies instead.
+ */
+function buildModelArgs(model?: string, effort?: ClaudeEffort): string[] {
+  const args: string[] = [];
+  const trimmedModel = typeof model === "string" ? model.trim() : "";
+  if (trimmedModel) {
+    args.push("--model", trimmedModel);
+  }
+  if (effort && VALID_EFFORTS.has(effort)) {
+    args.push("--effort", effort);
+  }
+  return args;
+}
+
+/**
+ * Resolve why-mode model/effort from the environment. Why mode is a deep,
+ * on-demand explanation — it's tuned separately from quiz generation so a
+ * faster/cheaper quiz default doesn't force the tutor down to the same tier.
+ */
+function buildWhyModelArgs(): string[] {
+  const model = process.env.QUIZME_CLAUDE_WHY_MODEL?.trim();
+  const effort = process.env.QUIZME_CLAUDE_WHY_EFFORT?.trim() as ClaudeEffort | undefined;
+  return buildModelArgs(model, effort);
+}
+
+/**
  * Whether `claude` has already been verified this process. The check
  * is cheap but synchronous, so we avoid repeating it on every generation call.
  */
@@ -262,7 +303,8 @@ function ensureClaudeAvailable(): void {
         "  QUIZME_CLAUDE_BIN=/absolute/path/to/claude",
         "(also checked: " + CLAUDE_BIN_CANDIDATES.join(", ") + ")",
         "",
-        "Or run QuizMe offline with QUIZME_PROVIDER=local."
+        "Note: an offline local provider (QUIZME_PROVIDER=local) is documented",
+        "but not yet implemented — the CLI still requires `claude`."
       ].join("\n")
     );
   }
@@ -411,6 +453,7 @@ export async function generateQuestions({
 
   await runClaude(
     [
+      ...buildModelArgs(config.claudeModel, config.claudeEffort),
       "-p",
       "--output-format", "stream-json",
       "--verbose",
@@ -460,7 +503,7 @@ export async function generateWhy({
   let streamedText = "";
 
   await runClaude(
-    ["-p", "--output-format", "stream-json", "--verbose", prompt],
+    ["-p", ...buildWhyModelArgs(), "--output-format", "stream-json", "--verbose", prompt],
     {
       onEvent: (event) => {
         events.push(event);

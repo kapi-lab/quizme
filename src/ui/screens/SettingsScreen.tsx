@@ -4,7 +4,7 @@ import { AppHeader } from "../components/AppHeader.js";
 import { SelectList } from "../components/SelectList.js";
 import { StatusBar } from "../components/StatusBar.js";
 import { hintLine, theme } from "../theme.js";
-import type { Level, SoundPlayer, UserConfig } from "../../types.js";
+import type { ClaudeEffort, Level, SoundPlayer, UserConfig } from "../../types.js";
 
 const LEVELS = [
   { id: "junior", label: "Junior" },
@@ -12,6 +12,21 @@ const LEVELS = [
   { id: "senior", label: "Senior" },
   { id: "staff", label: "Staff+" }
 ] as const satisfies ReadonlyArray<{ id: Level; label: string }>;
+
+const CLAUDE_MODELS = [
+  { id: "haiku", label: "Haiku (fast)" },
+  { id: "sonnet", label: "Sonnet" },
+  { id: "opus", label: "Opus" },
+  { id: "", label: "Account default" }
+] as const;
+
+const CLAUDE_EFFORTS: ReadonlyArray<{ id: ClaudeEffort | ""; label: string }> = [
+  { id: "low", label: "Low" },
+  { id: "medium", label: "Medium" },
+  { id: "high", label: "High" },
+  { id: "xhigh", label: "xHigh" },
+  { id: "max", label: "Max" }
+];
 
 export function SettingsScreen({
   config,
@@ -27,10 +42,18 @@ export function SettingsScreen({
   onBack: () => void;
 }) {
   const isZh = config.language === "zh-CN";
-  const [step, setStep] = useState<"menu" | "level" | "goal" | "confirm-reset">("menu");
+  const [step, setStep] = useState<
+    "menu" | "level" | "goal" | "model" | "effort" | "confirm-reset"
+  >("menu");
   const [menuIndex, setMenuIndex] = useState(0);
   const [levelIndex, setLevelIndex] = useState(
     Math.max(0, LEVELS.findIndex((l) => l.id === config.level))
+  );
+  const [modelIndex, setModelIndex] = useState(
+    Math.max(0, CLAUDE_MODELS.findIndex((m) => m.id === (config.claudeModel ?? "")))
+  );
+  const [effortIndex, setEffortIndex] = useState(
+    Math.max(0, CLAUDE_EFFORTS.findIndex((e) => e.id === (config.claudeEffort ?? "")))
   );
   const soundRef = useRef(sound);
   soundRef.current = sound;
@@ -43,6 +66,14 @@ export function SettingsScreen({
         { id: "level", label: `等级: ${config.level}` },
         { id: "goal", label: `每日目标: ${config.dailyGoal}` },
         { id: "sound", label: `音效: ${config.soundEnabled ? "开" : "关"}` },
+        {
+          id: "model",
+          label: `题目模型: ${config.claudeModel ? config.claudeModel : "默认"}`
+        },
+        {
+          id: "effort",
+          label: `题目 Effort: ${config.claudeEffort ?? "默认"}`
+        },
         { id: "reset", label: "清除设置和缓存" },
         { id: "back", label: "返回" }
       ]
@@ -51,6 +82,14 @@ export function SettingsScreen({
         { id: "level", label: `Level: ${config.level}` },
         { id: "goal", label: `Daily goal: ${config.dailyGoal}` },
         { id: "sound", label: `Sound: ${config.soundEnabled ? "On" : "Off"}` },
+        {
+          id: "model",
+          label: `Quiz model: ${config.claudeModel ? config.claudeModel : "default"}`
+        },
+        {
+          id: "effort",
+          label: `Quiz effort: ${config.claudeEffort ?? "default"}`
+        },
         { id: "reset", label: "Clear settings & cache" },
         { id: "back", label: "Back" }
       ];
@@ -90,6 +129,20 @@ export function SettingsScreen({
         if (action === "level") {
           setLevelIndex(Math.max(0, LEVELS.findIndex((l) => l.id === current.level)));
           setStep("level");
+          return;
+        }
+        if (action === "model") {
+          setModelIndex(
+            Math.max(0, CLAUDE_MODELS.findIndex((m) => m.id === (current.claudeModel ?? "")))
+          );
+          setStep("model");
+          return;
+        }
+        if (action === "effort") {
+          setEffortIndex(
+            Math.max(0, CLAUDE_EFFORTS.findIndex((e) => e.id === (current.claudeEffort ?? "")))
+          );
+          setStep("effort");
           return;
         }
         if (action === "goal") {
@@ -139,6 +192,47 @@ export function SettingsScreen({
       return;
     }
 
+    if (step === "model") {
+      if (key.upArrow) {
+        setModelIndex((i) => Math.max(0, i - 1));
+        soundRef.current.playNavigate();
+        return;
+      }
+      if (key.downArrow) {
+        setModelIndex((i) => Math.min(CLAUDE_MODELS.length - 1, i + 1));
+        soundRef.current.playNavigate();
+        return;
+      }
+      if (key.return) {
+        onPersist({ ...configRef.current, claudeModel: CLAUDE_MODELS[modelIndex].id });
+        setStep("menu");
+      }
+      if (key.escape) setStep("menu");
+      return;
+    }
+
+    if (step === "effort") {
+      if (key.upArrow) {
+        setEffortIndex((i) => Math.max(0, i - 1));
+        soundRef.current.playNavigate();
+        return;
+      }
+      if (key.downArrow) {
+        setEffortIndex((i) => Math.min(CLAUDE_EFFORTS.length - 1, i + 1));
+        soundRef.current.playNavigate();
+        return;
+      }
+      if (key.return) {
+        onPersist({
+          ...configRef.current,
+          claudeEffort: CLAUDE_EFFORTS[effortIndex].id as ClaudeEffort | undefined
+        });
+        setStep("menu");
+      }
+      if (key.escape) setStep("menu");
+      return;
+    }
+
     if (step === "goal") {
       const num = Number(input);
       if (num >= 1 && num <= 9) {
@@ -159,6 +253,55 @@ export function SettingsScreen({
         </Box>
         <StatusBar
           status={isZh ? "等级" : "Level"}
+          hints={hintLine([
+            isZh ? "↑↓ 选择" : "↑↓ select",
+            isZh ? "Enter 确认" : "enter confirm",
+            isZh ? "Esc 返回" : "esc back"
+          ])}
+        />
+      </Box>
+    );
+  }
+
+  if (step === "model") {
+    const modelItems = CLAUDE_MODELS.map((m) => ({ id: m.id || "default", label: m.label }));
+    return (
+      <Box flexDirection="column">
+        <AppHeader
+          title="QuizMe"
+          subtitle={isZh ? "设置 · 题目模型" : "Settings · Quiz model"}
+        />
+        <Box marginTop={1}>
+          <SelectList items={modelItems} selectedIndex={modelIndex} showIndex />
+        </Box>
+        <StatusBar
+          status={isZh ? "模型" : "Model"}
+          hints={hintLine([
+            isZh ? "↑↓ 选择" : "↑↓ select",
+            isZh ? "Enter 确认" : "enter confirm",
+            isZh ? "Esc 返回" : "esc back"
+          ])}
+        />
+      </Box>
+    );
+  }
+
+  if (step === "effort") {
+    const effortItems = CLAUDE_EFFORTS.map((e) => ({
+      id: e.id,
+      label: e.label
+    }));
+    return (
+      <Box flexDirection="column">
+        <AppHeader
+          title="QuizMe"
+          subtitle={isZh ? "设置 · 题目 Effort" : "Settings · Quiz effort"}
+        />
+        <Box marginTop={1}>
+          <SelectList items={effortItems} selectedIndex={effortIndex} showIndex />
+        </Box>
+        <StatusBar
+          status={isZh ? "Effort" : "Effort"}
           hints={hintLine([
             isZh ? "↑↓ 选择" : "↑↓ select",
             isZh ? "Enter 确认" : "enter confirm",
