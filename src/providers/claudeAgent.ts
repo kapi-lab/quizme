@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import { QUESTION_SCHEMA } from "../generation/schema.js";
 import { validateQuestions } from "../generation/validator.js";
@@ -167,6 +167,39 @@ function buildWhyPrompt({
  */
 const CLAUDE_PRINT_SECURITY_ARGS = ["--bare", "--tools", ""] as const;
 
+/**
+ * Whether `claude` has already been verified on PATH this process. The check
+ * is cheap but synchronous, so we avoid repeating it on every generation call.
+ */
+let claudeAvailableVerified = false;
+
+/**
+ * Pre-flight check: ensure the `claude` CLI is installed and on PATH before
+ * we spawn a long-running print-mode call. Throws a clear, actionable error
+ * instead of letting `spawn` fail later with a generic ENOENT.
+ */
+function ensureClaudeAvailable(): void {
+  if (claudeAvailableVerified) return;
+  const result = spawnSync("claude", ["--version"], {
+    stdio: "ignore",
+    shell: process.platform === "win32"
+  });
+  if (result.error || result.status !== 0) {
+    throw new Error(
+      [
+        "Claude Code CLI (`claude`) was not found on your PATH.",
+        "QuizMe needs it for quiz generation and the `why` mode.",
+        "",
+        "Install it with:  npm install -g @anthropic-ai/claude-code",
+        "Docs:             https://docs.anthropic.com/claude-code",
+        "",
+        "Or run QuizMe offline with QUIZME_PROVIDER=local."
+      ].join("\n")
+    );
+  }
+  claudeAvailableVerified = true;
+}
+
 async function runClaude(
   args: string[],
   { onEvent, timeout = 120000 }: { onEvent?: (event: ClaudeEvent) => void; timeout?: number } = {}
@@ -304,6 +337,7 @@ export async function generateQuestions({
   preferences?: ProfilePreference[];
   onProgress?: (chunk: string) => void;
 }): Promise<QuizQuestion[]> {
+  ensureClaudeAvailable();
   const prompt = buildQuizPrompt({ source, config, recentQuestions, mode, signals, preferences });
   const events: ClaudeEvent[] = [];
 
@@ -352,6 +386,7 @@ export async function generateWhy({
   userAnswer: string;
   onProgress?: (chunk: string) => void;
 }): Promise<string> {
+  ensureClaudeAvailable();
   const prompt = buildWhyPrompt({ question, config, asked, userAnswer });
   const events: ClaudeEvent[] = [];
   let streamedText = "";

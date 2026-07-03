@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --import tsx
+#!/usr/bin/env node
 import path from "node:path";
 import { createStore } from "../storage/index.js";
 import { ensureConfig } from "./config.js";
