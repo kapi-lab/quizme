@@ -1,4 +1,20 @@
-import type { ProfileSignal, Store } from "../types.js";
+import type { ProfileSignal, SourceSummary, Store } from "../types.js";
+
+export function formatSourceMode(
+  source: SourceSummary,
+  isZh: boolean
+): string {
+  switch (source.sourceType) {
+    case "claude_session":
+      return isZh ? "Claude Code 记录" : "Claude Code session";
+    case "repo":
+      return isZh ? "代码仓库" : "Code repository";
+    case "topic":
+      return isZh ? "用户指定提示词" : "User prompt";
+    default:
+      return isZh ? "手动" : "Manual";
+  }
+}
 
 export function formatStats(store: Store): string[] {
   const stats = store.getStats();

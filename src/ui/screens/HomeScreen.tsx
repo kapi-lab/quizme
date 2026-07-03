@@ -4,18 +4,20 @@ import { SelectList } from "../components/SelectList.js";
 import { StatusBar } from "../components/StatusBar.js";
 import { WelcomeBanner } from "../components/WelcomeBanner.js";
 import { hintLine } from "../theme.js";
-import type { SoundPlayer, Stats, UserConfig } from "../../types.js";
+import type { SoundPlayer, SourceSummary, Stats, UserConfig } from "../../types.js";
 
 export type HomeAction = "quiz" | "review" | "stats" | "profile" | "settings" | "exit";
 
 export function HomeScreen({
   stats,
   config,
+  source,
   sound,
   onAction
 }: {
   stats: Stats;
   config: UserConfig;
+  source: SourceSummary;
   sound: SoundPlayer;
   onAction: (action: HomeAction) => void;
 }) {
@@ -67,7 +69,7 @@ export function HomeScreen({
 
   return (
     <Box flexDirection="column">
-      <WelcomeBanner config={config} stats={stats} />
+      <WelcomeBanner config={config} stats={stats} source={source} />
       <Box marginTop={1} flexDirection="column">
         <SelectList items={items} selectedIndex={selectedIndex} showIndex />
       </Box>

@@ -47,16 +47,7 @@ export function calculateLayoutDimensions(
   };
 }
 
-export function calculateOptimalLeftWidth(
-  titleLine: string,
-  statusLine: string,
-  cwdLine: string
-): number {
-  const contentWidth = Math.max(
-    titleLine.length,
-    statusLine.length,
-    cwdLine.length,
-    20
-  );
+export function calculateOptimalLeftWidth(...lines: string[]): number {
+  const contentWidth = Math.max(...lines.map((line) => line.length), 20);
   return Math.min(contentWidth + 4, MAX_LEFT_WIDTH);
 }

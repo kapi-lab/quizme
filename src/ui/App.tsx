@@ -33,6 +33,17 @@ export function App({
   const stats = store.getStats();
   const isZh = config.language === "zh-CN";
   const sound = useMemo(() => createSoundPlayer(config), [config]);
+  const homeSource = useMemo(() => {
+    try {
+      return resolveSource({ _: [] });
+    } catch {
+      return {
+        sourceType: "claude_session" as const,
+        title: "",
+        summary: ""
+      };
+    }
+  }, [resolveSource]);
 
   function startQuiz({
     source,
@@ -153,6 +164,7 @@ export function App({
     <HomeScreen
       stats={stats}
       config={config}
+      source={homeSource}
       sound={sound}
       onAction={handleHomeAction}
     />
