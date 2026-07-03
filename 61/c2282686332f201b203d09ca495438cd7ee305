@@ -1,0 +1,86 @@
+src/ui/App.tsx
+  s_3d855b3785f309::t_fe4c2d56b338c8 8
+  s_3d855b3785f309::t_bacb38fe981f00 125-129
+src/ui/components/AppHeader.tsx
+  s_f3e1ca6f953861::t_cf4329c80c9901 23
+  s_f3e1ca6f953861::t_6dfe5229164ed3 1-2,12-13,20,22,24
+test/store.test.ts
+  s_3d855b3785f309::t_f9d6a424c9f851 177-195,197-219
+  s_3d855b3785f309::t_11394c15926c61 196
+src/ui/components/Spinner.tsx
+  s_f3e1ca6f953861::t_f85657b1cdeff4 1-24
+src/providers/claudeAgent.ts
+  s_a17a574ed67e6a::t_9c567c38f83e56 164,166
+  s_a17a574ed67e6a::t_b0bb1d6068405f 277-278
+  s_a17a574ed67e6a::t_4b18afe7bbdfeb 156,162-163,167-214,218-251,261-263
+  s_a17a574ed67e6a::t_2474e0468bdb34 3-5
+  s_a17a574ed67e6a::t_fdb4ba2b9b7e24 264
+.gitignore
+  s_cf25aec3b0d705::t_956eb0e3265954 7
+src/ui/components/StatusBar.tsx
+  s_f3e1ca6f953861::t_22071379b981f4 11,14
+src/ui/components/TextInput.tsx
+  s_f3e1ca6f953861::t_d376a44a488b5f 1-2,8-9,15,17-19,38-39,41-56
+src/ui/theme.ts
+  s_f3e1ca6f953861::t_8af64b779a272a 24-28
+  s_f3e1ca6f953861::t_43ce83af321e71 19
+src/ui/components/SelectList.tsx
+  s_f3e1ca6f953861::t_3f0a8a9dc54800 25
+src/ui/screens/SettingsScreen.tsx
+  s_3d855b3785f309::t_9cd6a46fb9fa4b 20,26,30,46,54
+  s_3d855b3785f309::t_0b5b76263d1d97 99-102,111-119
+  s_3d855b3785f309::t_603e3e42ce1e5c 187-216
+  s_3d855b3785f309::t_a6a4046f20b625 120-122
+src/ui/screens/SetupScreen.tsx
+  s_3d855b3785f309::t_9d02f1a0db672d 2,6,16-20,23,25,29-30,33-39,64,75,83,88-90
+src/types.ts
+  s_3d855b3785f309::t_28fd52a1118b20 111-116
+src/storage/json.ts
+  s_3d855b3785f309::t_c2fd43f87d420d 193-198
+src/ui/screens/QuizScreen.tsx
+  s_f3e1ca6f953861::t_8e53bd77054eb5 318-320
+  s_f3e1ca6f953861::t_cb6cafaa12b9c6 441,443-444
+  s_f3e1ca6f953861::t_b6b44a97cafd58 333-335
+  s_f3e1ca6f953861::t_4fd5ca2b6732eb 468-469,480,484,500
+  s_f3e1ca6f953861::t_c0c260f84859e5 7,11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "61c2282686332f201b203d09ca495438cd7ee305",
+  "prompts": {},
+  "sessions": {
+    "s_3d855b3785f309": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4366cbb6-66ca-452c-908c-f5043de4cf2a",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_a17a574ed67e6a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "25b3e123-de92-4b93-88be-cad85ab4fa30",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_cf25aec3b0d705": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "48ade63b-9fe8-4b5a-86c0-f78a2d8a2696",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_f3e1ca6f953861": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f131b61f-de57-4ccd-b643-c0d039c425f8",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
