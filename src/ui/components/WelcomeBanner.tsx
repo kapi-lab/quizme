@@ -1,5 +1,4 @@
 import { Box, Text, useStdout } from "ink";
-import { Clawd } from "./Clawd.js";
 import type { FeedConfig } from "./Feed.js";
 import { FeedColumn } from "./FeedColumn.js";
 import {
@@ -67,7 +66,7 @@ function buildFeeds(
   return [statsFeed, configFeed];
 }
 
-const CLAWD_AND_GAP = 12;
+const CLAWD_AND_GAP = 0;
 
 export function WelcomeBanner({
   config,
@@ -111,24 +110,21 @@ export function WelcomeBanner({
   const boxWidth = Math.min(columns, totalWidth + 4);
 
   const leftPanel = (
-    <Box flexDirection="row" gap={2} alignItems="center">
-      <Clawd />
-      <Box flexDirection="column">
-        <Text>
-          <Text bold>QuizMe</Text>
-          <Text dimColor> v{truncate(QUIZME_VERSION, 12)}</Text>
+    <Box flexDirection="column">
+      <Text>
+        <Text bold>QuizMe</Text>
+        <Text dimColor> v{truncate(QUIZME_VERSION, 12)}</Text>
+      </Text>
+      {taglineLines.map((line, index) => (
+        <Text key={`tagline-${index}`} dimColor>
+          {line}
         </Text>
-        {taglineLines.map((line, index) => (
-          <Text key={`tagline-${index}`} dimColor>
-            {line}
-          </Text>
-        ))}
-        {modeLines.map((line, index) => (
-          <Text key={`mode-${index}`} dimColor>
-            {line}
-          </Text>
-        ))}
-      </Box>
+      ))}
+      {modeLines.map((line, index) => (
+        <Text key={`mode-${index}`} dimColor>
+          {line}
+        </Text>
+      ))}
     </Box>
   );
 
@@ -149,8 +145,10 @@ export function WelcomeBanner({
         borderStyle="round"
         borderColor={theme.claude}
         paddingX={1}
-        paddingY={1}
+        paddingY={0}
         width={boxWidth}
+        borderLeft={false}
+        borderRight={false}
       >
         {layoutMode === "horizontal" ? (
           <Box flexDirection="row" gap={1}>
