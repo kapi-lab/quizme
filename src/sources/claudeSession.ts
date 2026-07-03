@@ -1,7 +1,11 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { getClaudeProjectsDir } from "../platform/paths.js";
 import type { SourceSummary } from "../types.js";
+
+function getClaudeProjectsDir(): string {
+  return path.join(os.homedir(), ".claude", "projects");
+}
 
 type JsonRecord = Record<string, unknown>;
 

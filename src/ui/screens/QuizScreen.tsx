@@ -81,20 +81,19 @@ export function QuizScreen({
 
     (async () => {
       try {
+        store.clearQuestionBank();
         const recentQuestions = store.listRecentQuestions(20);
         let loaded;
         if (questionsOverride) {
           loaded = dedupeQuestions(questionsOverride, recentQuestions).slice(0, 5);
         } else {
           const signals = store.getProfileSignals();
-          const preferences = store.listProfilePreferences();
           const generated = await generateQuestions({
             source,
             config,
             recentQuestions,
             mode,
             signals,
-            preferences,
             onProgress: () => {}
           });
           loaded = dedupeQuestions(generated, recentQuestions).slice(0, 5);
@@ -107,7 +106,7 @@ export function QuizScreen({
           return;
         }
 
-        loaded.forEach((item: QuizQuestion) => store.saveQuestion(item, source.sourceType));
+        loaded.forEach((item: QuizQuestion) => store.saveQuestion(item));
         setQuestions(loaded);
         setPhase("question");
         startedAtRef.current = Date.now();
@@ -140,7 +139,7 @@ export function QuizScreen({
       tags: question.tags
     });
     question.tags.forEach((tag: string) => store.updateSignal(tag, correct));
-    store.upsertReviewItem(question.id, correct);
+    store.upsertReviewItem(question, correct);
     setAnswerResult({ selected, correct });
     setResultActionIndex(0);
     setPhase("result");
@@ -189,7 +188,7 @@ export function QuizScreen({
   function finishWhy() {
     if (!question) return;
     if (whyTurnsRef.current.length) {
-      store.appendWhyThread(question.id, whyTurnsRef.current);
+      store.recordWhyAttempt(question.id);
     }
     whyTurnsRef.current = [];
     setWhyMessages([]);

@@ -64,8 +64,7 @@ export function App({
       return;
     }
     if (action === "review") {
-      const ids = new Set(store.listReviewQuestionIds(5));
-      const questions = store.listRecentQuestions(50).filter((item: QuizQuestion) => ids.has(item.id));
+      const questions = store.listReviewQuestions(5);
       if (!questions.length) {
         setScreen("review-empty");
         return;

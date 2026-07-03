@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
-import { SqliteStore } from "../src/storage/sqlite.js";
+import { JsonStore } from "../src/storage/json.js";
 import type { QuizQuestion } from "../src/types.js";
 
-function makeTempStore(): SqliteStore {
+function makeTempStore(): JsonStore {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "quizme-test-"));
-  const store = new SqliteStore(path.join(dir, "history.sqlite"));
+  const store = new JsonStore(path.join(dir, "quizme.json"));
   store.init();
   return store;
 }
@@ -42,13 +42,33 @@ test("config round-trips through JSON", () => {
   assert.deepEqual(store.getConfig("user"), { level: "senior" });
 });
 
-test("questions are saved and listed by recency", () => {
+test("config persists across store instances", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "quizme-test-"));
+  const path1 = path.join(dir, "quizme.json");
+  const store = new JsonStore(path1);
+  store.init();
+  store.setConfig("user", { level: "mid", language: "en" });
+  const reloaded = new JsonStore(path1);
+  reloaded.init();
+  assert.deepEqual(reloaded.getConfig("user"), { level: "mid", language: "en" });
+});
+
+test("question bank is in-memory and cleared on demand", () => {
   const store = makeTempStore();
-  store.saveQuestion(sampleQuestion, "claude_session");
+  store.saveQuestion(sampleQuestion);
   const listed = store.listRecentQuestions(5);
   assert.equal(listed.length, 1);
   assert.equal(listed[0].id, "q1");
   assert.equal(listed[0].topic, "react");
+
+  // Re-opening the store should NOT carry the question bank (in-memory only).
+  const filePath = (store as unknown as { filePath: string }).filePath;
+  const reloaded = new JsonStore(filePath);
+  reloaded.init();
+  assert.equal(reloaded.listRecentQuestions(5).length, 0);
+
+  store.clearQuestionBank();
+  assert.equal(store.listRecentQuestions(5).length, 0);
 });
 
 test("updateSignal clamps and accumulates within [0.05, 0.95]", () => {
@@ -81,9 +101,8 @@ test("updateSignal clamps to the 0.95 ceiling and 0.05 floor", () => {
   assert.equal(weak?.score, 0.05);
 });
 
-test("stats aggregates attempts, review queue, and signals", () => {
+test("recordAttempt updates aggregate stats and per-day buckets", () => {
   const store = makeTempStore();
-  store.saveQuestion(sampleQuestion, "claude_session");
   store.recordAttempt({
     questionId: "q1",
     selected: "A",
@@ -92,7 +111,7 @@ test("stats aggregates attempts, review queue, and signals", () => {
     tags: ["react", "hooks"]
   });
   store.updateSignal("react", false);
-  store.upsertReviewItem("q1", false);
+  store.upsertReviewItem(sampleQuestion, false);
 
   const stats = store.getStats();
   assert.equal(stats.attemptsTotal, 1);
@@ -107,45 +126,51 @@ test("stats aggregates attempts, review queue, and signals", () => {
   assert.ok(stats.weekRows.length >= 1);
 });
 
+test("stats persist across store instances", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "quizme-test-"));
+  const filePath = path.join(dir, "quizme.json");
+  const store = new JsonStore(filePath);
+  store.init();
+  store.recordAttempt({
+    questionId: "q1",
+    selected: "B",
+    correct: true,
+    durationMs: 800,
+    tags: ["react"]
+  });
+
+  const reloaded = new JsonStore(filePath);
+  reloaded.init();
+  const stats = reloaded.getStats();
+  assert.equal(stats.attemptsTotal, 1);
+  assert.equal(stats.attemptsCorrect, 1);
+  assert.equal(stats.todayCount, 1);
+});
+
 test("review queue tracks resolved state", () => {
   const store = makeTempStore();
-  store.upsertReviewItem("q1", false);
-  assert.deepEqual(store.listReviewQuestionIds(), ["q1"]);
-  store.upsertReviewItem("q1", true);
-  assert.deepEqual(store.listReviewQuestionIds(), []);
+  store.upsertReviewItem(sampleQuestion, false);
+  assert.equal(store.listReviewQuestions().length, 1);
+  assert.equal(store.listReviewQuestions()[0].id, "q1");
+  store.upsertReviewItem(sampleQuestion, true);
+  assert.equal(store.listReviewQuestions().length, 0);
 });
 
-test("profile preferences upsert and delete", () => {
+test("recordWhyAttempt increments whyCount", () => {
   const store = makeTempStore();
-  store.upsertProfilePreference({ tag: "react", kind: "boost" });
-  store.upsertProfilePreference({ tag: "css", kind: "suppress", note: "boring" });
-  let prefs = store.listProfilePreferences();
-  assert.equal(prefs.length, 2);
-  // re-upsert updates kind without duplicating
-  store.upsertProfilePreference({ tag: "react", kind: "known" });
-  prefs = store.listProfilePreferences();
-  assert.equal(prefs.length, 2);
-  assert.equal(prefs.find((p) => p.tag === "react")?.kind, "known");
-  store.deleteProfilePreference("css");
-  prefs = store.listProfilePreferences();
-  assert.equal(prefs.length, 1);
-  assert.equal(prefs[0].tag, "react");
+  store.recordWhyAttempt("q1");
+  store.recordWhyAttempt("q2");
+  assert.equal(store.getStats().whyCount, 2);
 });
 
-test("clearAll wipes every table", () => {
-  const store = makeTempStore();
-  store.saveQuestion(sampleQuestion, "claude_session");
-  store.recordAttempt({ questionId: "q1", selected: "A", correct: false, durationMs: 100, tags: ["react"] });
-  store.updateSignal("react", false);
-  store.upsertProfilePreference({ tag: "react", kind: "boost" });
-  store.upsertReviewItem("q1", false);
-  store.appendWhyThread("q1", [{ asked: "why?", answer: "because", at: "2026-01-01" }]);
-  store.clearAll();
-  assert.equal(store.listRecentQuestions().length, 0);
+test("a corrupt store file falls back to empty data", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "quizme-test-"));
+  const filePath = path.join(dir, "quizme.json");
+  fs.writeFileSync(filePath, "{ not valid json", "utf8");
+  const store = new JsonStore(filePath);
+  store.init();
+  assert.equal(store.getStats().attemptsTotal, 0);
   assert.equal(store.getProfileSignals().length, 0);
-  assert.equal(store.listProfilePreferences().length, 0);
-  assert.equal(store.listReviewQuestionIds().length, 0);
-  const stats = store.getStats();
-  assert.equal(stats.attemptsTotal, 0);
-  assert.equal(stats.whyCount, 0);
+  store.setConfig("user", { level: "mid" });
+  assert.deepEqual(store.getConfig("user"), { level: "mid" });
 });

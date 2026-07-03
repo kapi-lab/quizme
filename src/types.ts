@@ -63,15 +63,6 @@ export interface ProfileSignal {
   wrongCount: number;
 }
 
-export type ProfilePreferenceKind = "boost" | "suppress" | "known";
-
-export interface ProfilePreference {
-  tag: string;
-  kind: ProfilePreferenceKind;
-  note?: string;
-  updatedAt: string;
-}
-
 export interface Stats {
   attemptsTotal: number;
   attemptsCorrect: number;
@@ -101,8 +92,9 @@ export interface Store {
   init(): void;
   setConfig(key: string, value: unknown): void;
   getConfig<T>(key: string, fallback?: T | null): T | null;
-  saveQuestion(question: QuizQuestion, sourceType: string): void;
+  saveQuestion(question: QuizQuestion): void;
   listRecentQuestions(limit?: number): QuizQuestion[];
+  clearQuestionBank(): void;
   recordAttempt(payload: {
     questionId: string;
     selected: string;
@@ -110,19 +102,10 @@ export interface Store {
     durationMs: number;
     tags: string[];
   }): void;
+  recordWhyAttempt(questionId: string): void;
   updateSignal(tag: string, wasCorrect: boolean): void;
   getProfileSignals(): ProfileSignal[];
-  listProfilePreferences(): ProfilePreference[];
-  upsertProfilePreference(pref: Omit<ProfilePreference, "updatedAt">): void;
-  deleteProfilePreference(tag: string): void;
-  clearProfilePreferences(): void;
+  upsertReviewItem(question: QuizQuestion, resolved: boolean): void;
+  listReviewQuestions(limit?: number): QuizQuestion[];
   getStats(): Stats;
-  upsertReviewItem(questionId: string, resolved: boolean): void;
-  listReviewQuestionIds(limit?: number): string[];
-  appendWhyThread(questionId: string, turns: WhyTurn[]): void;
-  clearAttemptHistory(): void;
-  clearProfileSignals(): void;
-  clearWhyThreads(): void;
-  clearQuestionBank(): void;
-  clearAll(): void;
 }

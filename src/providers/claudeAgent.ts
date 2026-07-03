@@ -3,7 +3,6 @@ import crypto from "node:crypto";
 import { QUESTION_SCHEMA } from "../generation/schema.js";
 import { validateQuestions } from "../generation/validator.js";
 import type {
-  ProfilePreference,
   ProfileSignal,
   QuizMode,
   QuizQuestion,
@@ -82,32 +81,18 @@ function summarizeSignals(signals: ProfileSignal[]): string {
   ].join("\n");
 }
 
-function summarizePreferences(prefs: ProfilePreference[]): string {
-  if (!prefs.length) return "None.";
-  const boost = prefs.filter((p) => p.kind === "boost").map((p) => p.tag);
-  const suppress = prefs.filter((p) => p.kind === "suppress").map((p) => p.tag);
-  const known = prefs.filter((p) => p.kind === "known").map((p) => p.tag);
-  const lines: string[] = [];
-  if (boost.length) lines.push(`Boost (user wants more): ${boost.join(", ")}`);
-  if (suppress.length) lines.push(`Suppress (user wants less): ${suppress.join(", ")}`);
-  if (known.length) lines.push(`Already known (deprioritize as strong-area): ${known.join(", ")}`);
-  return lines.join("\n") || "None.";
-}
-
 function buildQuizPrompt({
   source,
   config,
   recentQuestions,
   mode,
-  signals,
-  preferences
+  signals
 }: {
   source: SourceSummary;
   config: UserConfig;
   recentQuestions: QuizQuestion[];
   mode: QuizMode;
   signals: ProfileSignal[];
-  preferences: ProfilePreference[];
 }) {
   return [
     "You are QuizMe, a CLI technical interview quiz generator for developers.",
@@ -118,14 +103,11 @@ function buildQuizPrompt({
     "Every question MUST include a `whyWrong` object with a short reason for each non-answer choice id.",
     "Focus on engineering judgment, debugging, tradeoffs, and code review reasoning — not trivia.",
     "Weight the batch toward the user's weak areas from profile signals below; keep a small share of strong-area questions for positive reinforcement.",
-    "Respect user preferences: boost tags should appear more often; suppress and 'known' tags should appear less often (do not fully drop them, just deprioritize).",
     `User level: ${config.level}`,
     `Language for questions and explanations: ${config.language}`,
     `Mode: ${mode}`,
     "Profile signals:",
     summarizeSignals(signals),
-    "Profile preferences:",
-    summarizePreferences(preferences),
     "Recent questions to avoid repeating (topic:question pairs):",
     JSON.stringify(recentQuestions.slice(0, 20).map((q) => ({ topic: q.topic, question: q.question }))),
     "Source context summary:",
@@ -326,7 +308,6 @@ export async function generateQuestions({
   recentQuestions,
   mode = "mixed",
   signals = [],
-  preferences = [],
   onProgress
 }: {
   source: SourceSummary;
@@ -334,11 +315,10 @@ export async function generateQuestions({
   recentQuestions: QuizQuestion[];
   mode?: QuizMode;
   signals?: ProfileSignal[];
-  preferences?: ProfilePreference[];
   onProgress?: (chunk: string) => void;
 }): Promise<QuizQuestion[]> {
   ensureClaudeAvailable();
-  const prompt = buildQuizPrompt({ source, config, recentQuestions, mode, signals, preferences });
+  const prompt = buildQuizPrompt({ source, config, recentQuestions, mode, signals });
   const events: ClaudeEvent[] = [];
 
   await runClaude(
