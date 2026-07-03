@@ -1,0 +1,23 @@
+src/ui/components/WelcomeBanner.tsx
+  s_241a5a583d9d71::t_a0ea256ec3c90b 148
+  s_241a5a583d9d71::t_1206be5e9ea407 150-151
+  s_241a5a583d9d71::t_592a2dcb429827 69
+  s_241a5a583d9d71::t_1e533dc2213157 113-117
+  s_241a5a583d9d71::t_9ae75c74bfebd8 118-120,122-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1a2b6fde26777031f89da60e99479f4dd02b285f",
+  "prompts": {},
+  "sessions": {
+    "s_241a5a583d9d71": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "da404d5a-eac1-4c52-b92c-9df05d60b015",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
