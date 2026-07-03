@@ -1,0 +1,38 @@
+src/cli/index.ts
+  s_39cd2ad0c7254b::t_43206cda35892e 1
+tsconfig.build.json
+  s_39cd2ad0c7254b::t_11af8f0d38060a 1-12
+LICENSE
+  s_39cd2ad0c7254b::t_a0c641292e1bd1 1-21
+package.json
+  s_39cd2ad0c7254b::t_b4046e16578fa9 2
+  s_39cd2ad0c7254b::t_1abbed81128b34 7,9-10,13,15-16,21-38,42,48
+README.md
+  s_39cd2ad0c7254b::t_9002d47e04e2dc 10-12,14-18,20,33,37-39
+  s_39cd2ad0c7254b::t_a747c662affecb 13,19,21-32
+.npmrc
+  s_39cd2ad0c7254b::t_e18d182c25a2d2 1
+.gitignore
+  s_39cd2ad0c7254b::t_b7145b85af3980 6
+src/providers/claudeAgent.ts
+  s_39cd2ad0c7254b::t_a03129ab25c47f 389
+  s_39cd2ad0c7254b::t_7d19c4ee178170 340
+  s_39cd2ad0c7254b::t_55c6f9d31c2deb 1
+  s_39cd2ad0c7254b::t_3ee7aea781173b 170-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e21d55e7610a8a90845def2ff9a2691c1b147201",
+  "prompts": {},
+  "sessions": {
+    "s_39cd2ad0c7254b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2d368dae-29a4-4540-9d66-6dbd3b1cb1c7",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
