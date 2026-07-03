@@ -22,8 +22,7 @@ export function SelectList({
           return (
             <Box key={item.id ?? item.label}>
               <Text
-                backgroundColor={theme.selectionBg}
-                color={theme.text}
+                color={theme.selectionFg}
                 bold
               >
                 {prefix}

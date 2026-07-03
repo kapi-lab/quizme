@@ -1,17 +1,22 @@
-import { Text, useInput } from "ink";
-import { theme } from "../theme.js";
+import { Box, Text, useStdout, useInput } from "ink";
+import { symbols, theme } from "../theme.js";
 
 export function TextInput({
   value,
   onChange,
   onSubmit,
-  placeholder = ""
+  placeholder = "",
+  frameLabel
 }: {
   value: string;
   onChange: (value: string) => void;
   onSubmit: (value: string) => void;
   placeholder?: string;
+  frameLabel?: string;
 }) {
+  const { stdout } = useStdout();
+  const columns = stdout.columns || 80;
+
   useInput((input, key) => {
     if (key.return) {
       onSubmit(value);
@@ -30,13 +35,24 @@ export function TextInput({
     }
   });
 
+  const prompt = placeholder || "> ";
+
   return (
-    <Text>
-      <Text color={theme.permission}>{placeholder}</Text>
-      <Text color={theme.text}>{value}</Text>
-      <Text backgroundColor={theme.suggestion} color={theme.inverseText}>
-        {" "}
-      </Text>
-    </Text>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={theme.promptBorder}
+      marginTop={1}
+      width={columns}
+    >
+      {frameLabel ? (
+        <Text dimColor>{frameLabel}</Text>
+      ) : null}
+      <Box>
+        <Text color={theme.permission}>{prompt}</Text>
+        <Text color={theme.text}>{value}</Text>
+        <Text color={theme.selectionFg}>{symbols.cursor}</Text>
+      </Box>
+    </Box>
   );
 }

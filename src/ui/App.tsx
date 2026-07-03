@@ -5,6 +5,7 @@ import { SettingsScreen } from "./screens/SettingsScreen.js";
 import { InfoScreen } from "./screens/InfoScreen.js";
 import { formatProfile, formatStats } from "./formatters.js";
 import { createSoundPlayer } from "./sound.js";
+import { normalizeConfig } from "../cli/config.js";
 import type { HomeAction } from "./screens/HomeScreen.js";
 import type { QuizMode, QuizQuestion, SourceSummary, Store, UserConfig } from "../types.js";
 
@@ -121,6 +122,11 @@ export function App({
         config={config}
         sound={sound}
         onPersist={persistConfig}
+        onReset={() => {
+          store.resetAll();
+          setConfig(normalizeConfig({}));
+          setScreen("home");
+        }}
         onBack={() => setScreen("home")}
       />
     );

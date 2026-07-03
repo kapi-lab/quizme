@@ -17,15 +17,17 @@ export function SettingsScreen({
   config,
   sound,
   onPersist,
+  onReset,
   onBack
 }: {
   config: UserConfig;
   sound: SoundPlayer;
   onPersist: (config: UserConfig) => void;
+  onReset: () => void;
   onBack: () => void;
 }) {
   const isZh = config.language === "zh-CN";
-  const [step, setStep] = useState<"menu" | "level" | "goal">("menu");
+  const [step, setStep] = useState<"menu" | "level" | "goal" | "confirm-reset">("menu");
   const [menuIndex, setMenuIndex] = useState(0);
   const [levelIndex, setLevelIndex] = useState(
     Math.max(0, LEVELS.findIndex((l) => l.id === config.level))
@@ -41,6 +43,7 @@ export function SettingsScreen({
         { id: "level", label: `等级: ${config.level}` },
         { id: "goal", label: `每日目标: ${config.dailyGoal}` },
         { id: "sound", label: `音效: ${config.soundEnabled ? "开" : "关"}` },
+        { id: "reset", label: "清除设置和缓存" },
         { id: "back", label: "返回" }
       ]
     : [
@@ -48,6 +51,7 @@ export function SettingsScreen({
         { id: "level", label: `Level: ${config.level}` },
         { id: "goal", label: `Daily goal: ${config.dailyGoal}` },
         { id: "sound", label: `Sound: ${config.soundEnabled ? "On" : "Off"}` },
+        { id: "reset", label: "Clear settings & cache" },
         { id: "back", label: "Back" }
       ];
 
@@ -92,11 +96,27 @@ export function SettingsScreen({
           setStep("goal");
           return;
         }
+        if (action === "reset") {
+          setStep("confirm-reset");
+          return;
+        }
         if (action === "back") {
           onBack();
         }
       }
       if (key.escape) onBack();
+      return;
+    }
+
+    if (step === "confirm-reset") {
+      if (input === "y" || input === "Y") {
+        soundRef.current.playToggleOff();
+        onReset();
+        return;
+      }
+      if (input === "n" || input === "N" || key.escape) {
+        setStep("menu");
+      }
       return;
     }
 
@@ -159,6 +179,36 @@ export function SettingsScreen({
         <StatusBar
           status={isZh ? "每日目标" : "Daily goal"}
           hints={hintLine([isZh ? "输入 1-9" : "type 1-9", isZh ? "Esc 返回" : "esc back"])}
+        />
+      </Box>
+    );
+  }
+
+  if (step === "confirm-reset") {
+    return (
+      <Box flexDirection="column">
+        <AppHeader
+          title="QuizMe"
+          subtitle={isZh ? "设置 · 清除设置和缓存" : "Settings · Clear settings & cache"}
+        />
+        <Box marginTop={1} flexDirection="column">
+          <Text color={theme.warning}>
+            {isZh
+              ? "将清除所有设置、统计、画像与复习队列，且不可恢复。"
+              : "This will erase all settings, stats, profile signals, and the review queue. This cannot be undone."}
+          </Text>
+          <Box marginTop={1}>
+            <Text color={theme.inactive}>
+              {isZh ? "按 Y 确认清除，N 取消" : "Press Y to confirm, N to cancel"}
+            </Text>
+          </Box>
+        </Box>
+        <StatusBar
+          status={isZh ? "确认" : "Confirm"}
+          hints={hintLine([
+            isZh ? "Y 确认" : "Y confirm",
+            isZh ? "N/Esc 取消" : "N/esc cancel"
+          ])}
         />
       </Box>
     );

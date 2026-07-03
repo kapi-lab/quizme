@@ -16,13 +16,16 @@ export const theme = {
   error: "#FF6B80",
   warning: "#FFC107",
   promptBorder: "#888888",
-  selectionBg: "#264F78",
+  selectionFg: "#6CB6FF",
   userMessageBg: "#373737"
 } as const;
 
 export const symbols = {
-  pointer: "›",
-  pointerIdle: " "
+  pointer: "❯",
+  pointerIdle: " ",
+  success: "✓",
+  error: "✘",
+  cursor: "▌"
 } as const;
 
 export function hintLine(parts: string[]): string {

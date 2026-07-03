@@ -1,5 +1,4 @@
 import { Box, Text } from "ink";
-import { theme } from "../theme.js";
 
 export function StatusBar({ status, hints }: { status?: string; hints?: string }) {
   if (!status && !hints) {
@@ -9,10 +8,10 @@ export function StatusBar({ status, hints }: { status?: string; hints?: string }
   return (
     <Box flexDirection="column" marginTop={1}>
       {status ? (
-        <Text color={theme.inactive}>{status}</Text>
+        <Text dimColor>{status}</Text>
       ) : null}
       {hints ? (
-        <Text color={theme.subtle}>{hints}</Text>
+        <Text dimColor>{hints}</Text>
       ) : null}
     </Box>
   );

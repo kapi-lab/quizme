@@ -4,10 +4,11 @@ import { dedupeQuestions } from "../../generation/dedupe.js";
 import { generateQuestions, generateWhy } from "../../providers/claudeAgent.js";
 import { AppHeader } from "../components/AppHeader.js";
 import { SelectList } from "../components/SelectList.js";
+import { Spinner } from "../components/Spinner.js";
 import { StatusBar } from "../components/StatusBar.js";
 import { TextInput } from "../components/TextInput.js";
 import { formatProfile, formatStats } from "../formatters.js";
-import { hintLine, theme } from "../theme.js";
+import { hintLine, symbols, theme } from "../theme.js";
 import type {
   AnswerResult,
   QuizMode,
@@ -314,7 +315,9 @@ export function QuizScreen({
     return (
       <Box flexDirection="column">
         <AppHeader title="QuizMe" subtitle={isZh ? "错误" : "Error"} />
-        <Text color={theme.error}>{error}</Text>
+        <Text color={theme.error}>
+          {symbols.error} {error}
+        </Text>
         <StatusBar
           status={isZh ? "无法继续" : "Cannot continue"}
           hints={hintLine([isZh ? "Enter 或 q 返回" : "enter or q to go back"])}
@@ -327,9 +330,9 @@ export function QuizScreen({
     return (
       <Box flexDirection="column">
         <AppHeader title="QuizMe" subtitle={isZh ? "生成中" : "Generating"} />
-        <Text color={theme.claude}>
-          {isZh ? `正在生成题目 (${genElapsed}s)...` : `Generating questions (${genElapsed}s)...`}
-        </Text>
+        <Spinner
+          label={isZh ? `正在生成题目 (${genElapsed}s)` : `Generating questions (${genElapsed}s)`}
+        />
         <StatusBar
           status={isZh ? "请稍候" : "Please wait"}
           hints={hintLine([isZh ? "基于当前上下文出题" : "building questions from context"])}
@@ -435,10 +438,10 @@ export function QuizScreen({
             color={answerResult?.correct ? theme.success : theme.error}
           >
             {answerResult?.correct
-              ? isZh ? "回答正确" : "Correct"
+              ? isZh ? `${symbols.success} 回答正确` : `${symbols.success} Correct`
               : isZh
-                ? `回答错误 · 正确答案 ${question.answer}`
-                : `Incorrect · Correct answer ${question.answer}`}
+                ? `${symbols.error} 回答错误 · 正确答案 ${question.answer}`
+                : `${symbols.error} Incorrect · Correct answer ${question.answer}`}
           </Text>
           <Box marginTop={1} marginBottom={1}>
             <Text color={theme.text} wrap="wrap">
@@ -462,8 +465,8 @@ export function QuizScreen({
           <Box marginTop={1} flexDirection="column">
             {whyMessages.map((msg, i) => (
               <Box key={`${msg.asked}-${i}`} flexDirection="column" marginBottom={1}>
-                <Text color={theme.suggestion}>
-                  {isZh ? "问: " : "Q: "}
+                <Text backgroundColor={theme.userMessageBg}>
+                  <Text color={theme.permission}>{symbols.pointer} </Text>
                   {msg.asked}
                 </Text>
                 <Text color={theme.text} wrap="wrap">
@@ -474,10 +477,11 @@ export function QuizScreen({
             {whyLoading && whyStreaming ? (
               <Text color={theme.text} wrap="wrap">
                 {whyStreaming}
+                <Text color={theme.selectionFg}>{symbols.cursor}</Text>
               </Text>
             ) : null}
             {whyLoading && !whyStreaming ? (
-              <Text color={theme.inactive}>{isZh ? "思考中..." : "Thinking..."}</Text>
+              <Spinner label={isZh ? "思考中" : "Thinking"} />
             ) : null}
           </Box>
           {!whyLoading ? (
@@ -493,6 +497,7 @@ export function QuizScreen({
                 submitWhyQuestion(value);
               }}
               placeholder="why> "
+              frameLabel={isZh ? `why · 第 ${questionIndex + 1}/${total} 题` : `why · Q${questionIndex + 1}/${total}`}
             />
           ) : null}
         </Box>

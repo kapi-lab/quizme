@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Box, Text, useInput } from "ink";
+import { Box, useInput } from "ink";
 import { AppHeader } from "../components/AppHeader.js";
 import { SelectList } from "../components/SelectList.js";
 import { StatusBar } from "../components/StatusBar.js";
-import { hintLine, theme } from "../theme.js";
+import { hintLine } from "../theme.js";
 import type { Language, Level, UserConfig } from "../../types.js";
 
 const LEVELS = [
@@ -13,21 +13,30 @@ const LEVELS = [
   { id: "staff", label: "Staff+" }
 ] as const satisfies ReadonlyArray<{ id: Level; label: string }>;
 
+const LANGUAGES = [
+  { id: "zh-CN", label: "中文" },
+  { id: "en", label: "English" }
+] as const satisfies ReadonlyArray<{ id: Language; label: string }>;
+
 export function SetupScreen({ onComplete }: { onComplete: (config: UserConfig) => void }) {
   const [step, setStep] = useState<"language" | "level">("language");
-  const [language, setLanguage] = useState<Language>("en");
+  const [languageIndex, setLanguageIndex] = useState(1); // default English
   const [levelIndex, setLevelIndex] = useState(1);
+  const isZh = LANGUAGES[languageIndex].id === "zh-CN";
 
   useInput((input, key) => {
     if (step === "language") {
-      if (input === "1") {
-        setLanguage("zh-CN");
-        setStep("level");
+      if (key.upArrow) {
+        setLanguageIndex((i) => Math.max(0, i - 1));
         return;
       }
-      if (input === "2") {
-        setLanguage("en");
-        setStep("level");
+      if (key.downArrow) {
+        setLanguageIndex((i) => Math.min(LANGUAGES.length - 1, i + 1));
+        return;
+      }
+      const num = Number(input);
+      if (num >= 1 && num <= LANGUAGES.length) {
+        setLanguageIndex(num - 1);
         return;
       }
       if (key.return) {
@@ -52,7 +61,7 @@ export function SetupScreen({ onComplete }: { onComplete: (config: UserConfig) =
       }
       if (key.return) {
         onComplete({
-          language,
+          language: LANGUAGES[languageIndex].id,
           level: LEVELS[levelIndex].id,
           dailyGoal: 5,
           soundEnabled: false,
@@ -62,9 +71,8 @@ export function SetupScreen({ onComplete }: { onComplete: (config: UserConfig) =
     }
   });
 
-  const isZh = language === "zh-CN";
-
   if (step === "language") {
+    const languageItems = LANGUAGES.map((l) => ({ id: l.id, label: l.label }));
     return (
       <Box flexDirection="column">
         <AppHeader
@@ -72,14 +80,14 @@ export function SetupScreen({ onComplete }: { onComplete: (config: UserConfig) =
           subtitle={isZh ? "首次设置 · 选择语言" : "First run · Choose language"}
         />
         <Box marginTop={1} flexDirection="column">
-          <Text color={theme.text}>1. 中文</Text>
-          <Text color={theme.text}>2. English</Text>
+          <SelectList items={languageItems} selectedIndex={languageIndex} showIndex />
         </Box>
         <StatusBar
           status={isZh ? "语言" : "Language"}
           hints={hintLine([
-            isZh ? "输入 1 或 2" : "type 1 or 2",
-            isZh ? "Enter 默认 English" : "enter for English"
+            isZh ? "↑↓ 选择" : "↑↓ select",
+            isZh ? "Enter 确认" : "enter confirm",
+            isZh ? "1-2 快捷" : "1-2 shortcut"
           ])}
         />
       </Box>

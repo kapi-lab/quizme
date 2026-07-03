@@ -108,4 +108,10 @@ export interface Store {
   upsertReviewItem(question: QuizQuestion, resolved: boolean): void;
   listReviewQuestions(limit?: number): QuizQuestion[];
   getStats(): Stats;
+  /**
+   * Wipe all persisted state — config, stats, profile signals, the review
+   * queue — plus the in-memory question bank for the current round. Used by
+   * the "clear settings & cache" action in Settings.
+   */
+  resetAll(): void;
 }

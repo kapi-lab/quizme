@@ -174,3 +174,46 @@ test("a corrupt store file falls back to empty data", () => {
   store.setConfig("user", { level: "mid" });
   assert.deepEqual(store.getConfig("user"), { level: "mid" });
 });
+
+test("resetAll wipes config, stats, profile, review queue and persists it", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "quizme-test-"));
+  const filePath = path.join(dir, "quizme.json");
+  const store = new JsonStore(filePath);
+  store.init();
+
+  store.setConfig("user", { level: "senior" });
+  store.recordAttempt({
+    questionId: "q1",
+    selected: "B",
+    correct: true,
+    durationMs: 800,
+    tags: ["react"]
+  });
+  store.updateSignal("react", true);
+  store.upsertReviewItem(sampleQuestion, false);
+  store.saveQuestion(sampleQuestion);
+
+  assert.equal(store.getConfig<{ level: string } | null>("user")?.level, "senior");
+  assert.equal(store.getStats().attemptsTotal, 1);
+  assert.equal(store.getProfileSignals().length, 1);
+  assert.equal(store.listReviewQuestions().length, 1);
+  assert.equal(store.listRecentQuestions().length, 1);
+
+  store.resetAll();
+
+  // In-memory state is cleared for the current instance...
+  assert.equal(store.getConfig("user"), null);
+  assert.equal(store.getStats().attemptsTotal, 0);
+  assert.equal(store.getStats().reviewPending, 0);
+  assert.equal(store.getProfileSignals().length, 0);
+  assert.equal(store.listReviewQuestions().length, 0);
+  assert.equal(store.listRecentQuestions().length, 0);
+
+  // ...and the empty state survives a reload from disk.
+  const reloaded = new JsonStore(filePath);
+  reloaded.init();
+  assert.equal(reloaded.getConfig("user"), null);
+  assert.equal(reloaded.getStats().attemptsTotal, 0);
+  assert.equal(reloaded.getProfileSignals().length, 0);
+  assert.equal(reloaded.listReviewQuestions().length, 0);
+});

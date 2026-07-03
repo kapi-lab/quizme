@@ -1,5 +1,8 @@
 import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
+import { existsSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { QUESTION_SCHEMA } from "../generation/schema.js";
 import { validateQuestions } from "../generation/validator.js";
 import type {
@@ -150,22 +153,102 @@ function buildWhyPrompt({
 const CLAUDE_PRINT_SECURITY_ARGS = ["--bare", "--tools", ""] as const;
 
 /**
- * Whether `claude` has already been verified on PATH this process. The check
+ * Whether `claude` has already been verified this process. The check
  * is cheap but synchronous, so we avoid repeating it on every generation call.
  */
 let claudeAvailableVerified = false;
 
 /**
- * Pre-flight check: ensure the `claude` CLI is installed and on PATH before
- * we spawn a long-running print-mode call. Throws a clear, actionable error
- * instead of letting `spawn` fail later with a generic ENOENT.
+ * Resolved absolute path to the `claude` binary, cached after first lookup.
+ * `null` means "defer to PATH" (i.e. spawn `"claude"` and let the OS resolve).
+ * `undefined` means "not yet looked up".
  */
-function ensureClaudeAvailable(): void {
-  if (claudeAvailableVerified) return;
-  const result = spawnSync("claude", ["--version"], {
+let claudeBinPath: string | null | undefined = undefined;
+
+/**
+ * Locations we probe for the `claude` CLI when it isn't on PATH. This covers
+ * the common install paths that GUI launchers / IDE integrated terminals often
+ * strip from PATH (notably `~/.local/bin`, where the native installer drops it).
+ */
+const CLAUDE_BIN_CANDIDATES: string[] = (() => {
+  const home = os.homedir();
+  const candidates = [
+    path.join(home, ".local/bin/claude"),
+    path.join(home, ".volta/bin/claude"),
+    path.join(home, ".bun/bin/claude"),
+    path.join(home, ".npm-global/bin/claude"),
+    "/usr/local/bin/claude",
+    "/opt/homebrew/bin/claude"
+  ];
+  // nvm: probe each installed node version's bin dir.
+  const nvmDir = process.env.NVM_DIR ?? path.join(home, ".nvm");
+  try {
+    const versions = existsSync(path.join(nvmDir, "versions/node"))
+      ? spawnSync("ls", [path.join(nvmDir, "versions/node")], { encoding: "utf8" }).stdout?.trim().split(/\s+/) ?? []
+      : [];
+    for (const v of versions) {
+      if (v) candidates.push(path.join(nvmDir, "versions/node", v, "bin/claude"));
+    }
+  } catch {
+    // ignore — nvm probe is best-effort
+  }
+  return candidates;
+})();
+
+/**
+ * Resolve the `claude` CLI binary path. Honors `QUIZME_CLAUDE_BIN` first, then
+ * PATH lookup, then a list of well-known install locations. Returns the
+ * absolute path if found, or `null` to fall back to a plain `claude` spawn.
+ */
+function resolveClaudeBin(): string | null {
+  if (claudeBinPath !== undefined) return claudeBinPath;
+
+  // 1. Explicit override.
+  const override = process.env.QUIZME_CLAUDE_BIN;
+  if (override) {
+    claudeBinPath = override;
+    return claudeBinPath;
+  }
+
+  // 2. On PATH.
+  const pathCheck = spawnSync("claude", ["--version"], {
     stdio: "ignore",
     shell: process.platform === "win32"
   });
+  if (!pathCheck.error && pathCheck.status === 0) {
+    claudeBinPath = null; // let spawn resolve via PATH
+    return claudeBinPath;
+  }
+
+  // 3. Well-known install locations.
+  for (const candidate of CLAUDE_BIN_CANDIDATES) {
+    if (existsSync(candidate)) {
+      const verify = spawnSync(candidate, ["--version"], { stdio: "ignore" });
+      if (!verify.error && verify.status === 0) {
+        claudeBinPath = candidate;
+        return claudeBinPath;
+      }
+    }
+  }
+
+  claudeBinPath = null;
+  return claudeBinPath;
+}
+
+/**
+ * Pre-flight check: ensure the `claude` CLI is installed before we spawn a
+ * long-running print-mode call. Throws a clear, actionable error instead of
+ * letting `spawn` fail later with a generic ENOENT.
+ */
+function ensureClaudeAvailable(): void {
+  if (claudeAvailableVerified) return;
+  const bin = resolveClaudeBin();
+  const result = bin
+    ? spawnSync(bin, ["--version"], { stdio: "ignore" })
+    : spawnSync("claude", ["--version"], {
+        stdio: "ignore",
+        shell: process.platform === "win32"
+      });
   if (result.error || result.status !== 0) {
     throw new Error(
       [
@@ -174,6 +257,10 @@ function ensureClaudeAvailable(): void {
         "",
         "Install it with:  npm install -g @anthropic-ai/claude-code",
         "Docs:             https://docs.anthropic.com/claude-code",
+        "",
+        "If it is installed but not on this process's PATH, set",
+        "  QUIZME_CLAUDE_BIN=/absolute/path/to/claude",
+        "(also checked: " + CLAUDE_BIN_CANDIDATES.join(", ") + ")",
         "",
         "Or run QuizMe offline with QUIZME_PROVIDER=local."
       ].join("\n")
@@ -187,7 +274,8 @@ async function runClaude(
   { onEvent, timeout = 120000 }: { onEvent?: (event: ClaudeEvent) => void; timeout?: number } = {}
 ) {
   return new Promise<string>((resolve, reject) => {
-    const child = spawn("claude", [...CLAUDE_PRINT_SECURITY_ARGS, ...args], {
+    const bin = resolveClaudeBin() ?? "claude";
+    const child = spawn(bin, [...CLAUDE_PRINT_SECURITY_ARGS, ...args], {
       stdio: ["ignore", "pipe", "pipe"]
     });
 

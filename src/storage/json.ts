@@ -190,6 +190,12 @@ export class JsonStore implements Store {
     this.questionBank = [];
   }
 
+  resetAll(): void {
+    this.data = emptyData();
+    this.questionBank = [];
+    this.persist();
+  }
+
   recordAttempt({
     correct
   }: {
