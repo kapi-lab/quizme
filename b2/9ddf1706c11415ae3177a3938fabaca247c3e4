@@ -1,0 +1,27 @@
+CLAUDE.md
+  s_884a9d4f891070::t_60dffb12382768 1-5
+README.zh-CN.md
+  s_884a9d4f891070::t_5c4280ca34d8bf 1-113
+AGENTS.md
+  s_884a9d4f891070::t_b20ae2c2f8d419 1-74
+package.json
+  s_884a9d4f891070::t_f428fa7e602549 27,29,31
+README.md
+  s_884a9d4f891070::t_459efc1c22fba1 3,5-9,11,13-44,50,56,58,61,64,66,68,76,78,80,82,84-89,91,93,95,97-104,106-109,111,113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "b29ddf1706c11415ae3177a3938fabaca247c3e4",
+  "prompts": {},
+  "sessions": {
+    "s_884a9d4f891070": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "58f45505-aa1e-4272-8483-736a60bc09de",
+        "model": "glm-5.2"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
