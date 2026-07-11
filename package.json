@@ -24,11 +24,11 @@
   "author": "jingyuan <zjingyuan@ctrip.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kian-zh/quizme.git"
+    "url": "git+https://github.com/kapi-lab/quizme.git"
   },
-  "homepage": "https://github.com/kian-zh/quizme#readme",
+  "homepage": "https://github.com/kapi-lab/quizme#readme",
   "bugs": {
-    "url": "https://github.com/kian-zh/quizme/issues"
+    "url": "https://github.com/kapi-lab/quizme/issues"
   },
   "keywords": [
     "cli",

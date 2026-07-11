@@ -1,37 +1,71 @@
 # QuizMe
 
-QuizMe 是一个本地 CLI MVP，用于将 Claude Code 会话上下文、仓库上下文或用户输入主题转化为短小的面试风格选择题。
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
-## 文档
+[![npm version](https://img.shields.io/npm/v/@jiy/quizme?logo=npm&label=npm)](https://www.npmjs.com/package/@jiy/quizme)
+[![npm downloads](https://img.shields.io/npm/dm/@jiy/quizme?label=downloads)](https://www.npmjs.com/package/@jiy/quizme)
+[![node](https://img.shields.io/node/v/@jiy/quizme?logo=node.js&label=node)](https://www.npmjs.com/package/@jiy/quizme)
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![GitHub](https://img.shields.io/badge/source-github-black?logo=github)](https://github.com/kapi-lab/quizme)
 
-- [产品文档](docs/product.md)
-- [技术文档](docs/technical.md)
+QuizMe is a local-first CLI MVP that turns Claude Code session context, repository context, or a topic you type in into short interview-style multiple-choice questions.
 
-## 安装
+## How it works
+
+```
+ Claude Code transcript   repository context   a topic you type
+ (~/.claude/projects)        (--repo .)            ("React ...")
+            │                     │                     │
+            └──────────┬──────────┴──────────┬──────────┘
+                       ▼                     ▼
+                 Sources ──────────► SourceSummary
+                       │
+                       ▼
+          Generation · prompts + schema + validator + dedupe
+                       │  builds a prompt carrying the context
+                       ▼
+            ClaudeAgent ─► `claude` CLI  (print mode: --bare --tools "")
+                       │  returns structured JSON questions
+                       ▼
+            Storage (quizme.json, atomic temp+rename)
+                       │  stats · profile · pending review queue
+                       ▼
+            Ink TUI  ──►  answer  ──►  `why` mode (deep explanation
+                                          on a wrong answer, via claude)
+```
+
+QuizMe does **not** call the Anthropic API directly. It shells out to your local `claude` CLI in print mode, so it uses whatever model and account your Claude Code is signed in with.
+
+## Documentation
+
+- [Product Document](docs/product.md) *(Chinese)*
+- [Technical Document](docs/technical.md) *(Chinese)*
+
+## Installation
 
 ```bash
 npm install -g @jiy/quizme
 ```
 
-无需全局安装也可直接用 `npx`：
+You can also run it directly with `npx` without a global install:
 
 ```bash
 npx @jiy/quizme
 ```
 
-## 前置条件
+## Prerequisites
 
-题目生成和 `why` 模式会调用本机的 **Claude Code CLI**（`claude` 命令）。请确保已安装并位于 `PATH`：
+Question generation and `why` mode invoke the local **Claude Code CLI** (the `claude` command). Make sure it is installed and on your `PATH`:
 
 ```bash
-claude --version   # 能输出版本号即可
+claude --version   # should print a version number
 ```
 
-未安装可运行 `npm install -g @anthropic-ai/claude-code`，或参考 [Claude Code 文档](https://docs.anthropic.com/claude-code)。
+If not installed, run `npm install -g @anthropic-ai/claude-code`, or see the [Claude Code docs](https://docs.anthropic.com/claude-code).
 
-> 无 `claude` 时仍可离线体验：`QUIZME_PROVIDER=local`。
+> No `claude` available? You can still try it offline: `QUIZME_PROVIDER=local`.
 
-## 使用方式
+## Usage
 
 ```bash
 quizme
@@ -39,37 +73,41 @@ quizme --repo .
 quizme "React rendering and caching"
 ```
 
-## 配置
+## Configuration
 
-### 交互式设置（持久化）
+### Interactive settings (persisted)
 
-首次运行会引导选择语言与等级；运行中进入「设置」页可调整以下项，改动写入本地配置：
+On first run you'll be guided to choose a language and level; from the in-app **Settings** page you can adjust the following, all written to local config:
 
-| 项 | 说明 | 可选值 |
+| Option | Description | Values |
 | --- | --- | --- |
-| 语言 | 题目与解释语言 | 中文 / English |
-| 等级 | 题目难度定位 | Junior / Mid / Senior / Staff+ |
-| 每日目标 | 每日题目数 | 1–9 |
-| 音效 | 答题音效开关 | 开 / 关 |
-| 题目模型 | 生成题目时传给 `claude --model` 的别名 | Haiku（默认，快）/ Sonnet / Opus / 账号默认 |
-| 题目 Effort | 生成题目时传给 `claude --effort` 的等级 | Low（默认）/ Medium / High / xHigh / Max |
+| Language | Language of questions and explanations | 中文 / English |
+| Level | Target difficulty | Junior / Mid / Senior / Staff+ |
+| Daily goal | Number of questions per day | 1–9 |
+| Sound | Answer sound effects | On / Off |
+| Question model | Alias passed to `claude --model` for generation | Haiku (default, fast) / Sonnet / Opus / account default |
+| Question Effort | Level passed to `claude --effort` for generation | Low (default) / Medium / High / xHigh / Max |
 
-> 默认 `Haiku` + `Low`：题目生成本质是结构化 JSON 输出，Haiku/low 足够且明显更快、更省。需要更高质量时可在设置页临时调高。
+> Default `Haiku` + `Low`: question generation is essentially structured JSON output, so Haiku/low is sufficient and noticeably faster and cheaper. Bump it up in Settings when you need higher quality.
 
-### 环境变量
+### Environment variables
 
-| 变量 | 作用 |
+| Variable | Purpose |
 | --- | --- |
-| `QUIZME_CLAUDE_BIN` | 指定 `claude` 可执行文件的绝对路径（PATH 找不到时使用） |
-| `QUIZME_DATA_DIR` | 覆盖本地数据存储目录；不设时使用平台 app data 目录，受限环境 fallback 到 `./.quizme` |
-| `QUIZME_CLAUDE_WHY_MODEL` | `why` 模式（答错后深度讲解）使用的模型别名；不设则走账号默认模型 |
-| `QUIZME_CLAUDE_WHY_EFFORT` | `why` 模式的 effort 等级（`low`/`medium`/`high`/`xhigh`/`max`）；不设则走默认 |
+| `QUIZME_CLAUDE_BIN` | Absolute path to the `claude` executable (use when PATH lookup fails) |
+| `QUIZME_DATA_DIR` | Override the local data directory; defaults to the platform app-data dir, falling back to `./.quizme` in restricted environments |
+| `QUIZME_CLAUDE_WHY_MODEL` | Model alias used by `why` mode (deep explanation after a wrong answer); falls back to the account default |
+| `QUIZME_CLAUDE_WHY_EFFORT` | Effort level for `why` mode (`low`/`medium`/`high`/`xhigh`/`max`); falls back to the default |
 
-> `why` 模式刻意与题目生成分开配置：讲解对模型质量更敏感，默认保持账号模型；仅当想全局降级/提速时才设这两个变量。
+> `why` mode is deliberately configured separately from question generation: explanations are more sensitive to model quality, so it keeps the account model by default; set these variables only when you want to globally downgrade or speed it up.
 
-## 说明
+## Notes
 
-- 默认模式会从 `~/.claude/projects` 读取当前仓库最近的 Claude Code transcript。统计、档案、设置、复习等功能通过交互式主界面进入。
-- 本地数据存储在平台 app data 目录中，并使用 `sqlite3`。
-- 题目生成和 `why` 模式会调用本地 `claude` CLI 的 print mode（`--bare` + `--tools ""`，禁用 agent tool；上下文已写入 prompt）。
-- 离线 provider（`QUIZME_PROVIDER=local`、`QUIZME_PROVIDER_FALLBACK=local`）为**暂未实现**的能力，当前不可用。
+- Default mode reads the most recent Claude Code transcript for the current repo from `~/.claude/projects`. Stats, archive, settings, and review features are accessible from the interactive main menu.
+- Local data is a single `quizme.json` file in the platform app-data directory, written atomically (temp file + rename). The current round's question bank lives in memory only and is never persisted.
+- Question generation and `why` mode invoke the local `claude` CLI in print mode (`--bare` + `--tools ""`, agent tools disabled; context is written into the prompt).
+- The offline provider (`QUIZME_PROVIDER=local`, `QUIZME_PROVIDER_FALLBACK=local`) is **not yet implemented** and currently unavailable.
+
+## License
+
+[MIT](./LICENSE)
