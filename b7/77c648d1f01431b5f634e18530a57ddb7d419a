@@ -1,0 +1,30 @@
+src/sources/claudeSession.ts
+  s_8c1535abbed994::t_f445db65bb6009 5,14,16-21,28-85,118,133-137,141-152,155-159,163-168,197,207-209,213-215,217-221,223,226,234-239,243-249,255,257-262,291,300-302,304-305,315,324,326-327,329-330,332
+  s_8c1535abbed994::t_cde27a6d8b1ab8 308-309,316-323,325,328,333-335
+  s_8c1535abbed994::t_c9e000a13eeba0 87-103,107,113-117
+  s_8c1535abbed994::t_afe532f2d2e6f0 108-112
+  s_8c1535abbed994::t_68e05def5c776f 227-233,240-242
+  s_8c1535abbed994::t_642f267012aee2 170-173,177-183
+  s_8c1535abbed994::t_492d1b59a0cc01 86
+  s_8c1535abbed994::t_80e01c82c4a068 184
+  s_8c1535abbed994::t_db515fb4f8fac9 331
+src/generation/prompts/quiz.ts
+  s_8c1535abbed994::t_3067fba7ef44d6 10-17,26
+  s_8c1535abbed994::t_f4d5afabd469b7 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "b777c648d1f01431b5f634e18530a57ddb7d419a",
+  "prompts": {},
+  "sessions": {
+    "s_8c1535abbed994": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9b312d88-9c29-4121-ab94-98b65d85ef58",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
