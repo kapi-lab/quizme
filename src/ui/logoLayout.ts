@@ -1,3 +1,5 @@
+import { displayWidth } from "./textUtils.js";
+
 const MAX_LEFT_WIDTH = 50;
 const BORDER_PADDING = 4;
 const DIVIDER_WIDTH = 1;
@@ -48,6 +50,6 @@ export function calculateLayoutDimensions(
 }
 
 export function calculateOptimalLeftWidth(...lines: string[]): number {
-  const contentWidth = Math.max(...lines.map((line) => line.length), 20);
+  const contentWidth = Math.max(...lines.map((line) => displayWidth(line)), 20);
   return Math.min(contentWidth + 4, MAX_LEFT_WIDTH);
 }

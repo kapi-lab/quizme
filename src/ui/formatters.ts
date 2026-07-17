@@ -1,4 +1,4 @@
-import type { ProfileSignal, SourceSummary, Store } from "../types.js";
+import type { ProfileSignal, SourceSummary, Store, UserConfig } from "../types.js";
 
 export function formatSourceMode(
   source: SourceSummary,
@@ -14,6 +14,21 @@ export function formatSourceMode(
     default:
       return isZh ? "手动" : "Manual";
   }
+}
+
+/**
+ * The model backend QuizMe reaches the model through, plus the configured
+ * model alias. The backend is currently always the local `claude` CLI; a
+ * direct-API path is proposed in docs/direct-api-provider.md but not yet built,
+ * so this reflects reality rather than a config toggle that doesn't exist.
+ */
+export function formatModelSource(config: UserConfig, isZh: boolean): string {
+  const backend = "Claude CLI";
+  const model = config.claudeModel?.trim();
+  const modelLabel = model || (isZh ? "账户默认" : "account default");
+  return isZh
+    ? `模型来源：${backend} · ${modelLabel}`
+    : `Model: ${backend} · ${modelLabel}`;
 }
 
 export function formatStats(store: Store): string[] {
