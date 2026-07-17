@@ -90,6 +90,8 @@ On first run you'll be guided to choose a language and level; from the in-app **
 
 > Default `Haiku` + `Low`: question generation is essentially structured JSON output, so Haiku/low is sufficient and noticeably faster and cheaper. Bump it up in Settings when you need higher quality.
 
+The Settings page also has two actions: **Export debug file** writes a self-contained HTML dump (all local JSON plus every `claude` prompt/output of the current session) into the directory you launched from, and **Clear settings & cache** resets local config, stats, profile, review queue, and the prefetch cache.
+
 ### Environment variables
 
 | Variable | Purpose |
@@ -104,7 +106,7 @@ On first run you'll be guided to choose a language and level; from the in-app **
 ## Notes
 
 - Default mode reads the most recent Claude Code transcript for the current repo from `~/.claude/projects`. Stats, archive, settings, and review features are accessible from the interactive main menu.
-- Local data is a single `quizme.json` file in the platform app-data directory, written atomically (temp file + rename). The current round's question bank lives in memory only and is never persisted.
+- Local data is a single `quizme.json` file in the platform app-data directory, written atomically (temp file + rename). The batch you are currently answering lives in memory, but the next batch is pre-generated in the background and its cache is persisted, so an unplayed batch survives restarts and only a cold start ever hits the loading screen.
 - Question generation and `why` mode invoke the local `claude` CLI in print mode (`--safe-mode` + `--tools ""`, agent tools disabled; context is written into the prompt).
 - The offline provider (`QUIZME_PROVIDER=local`, `QUIZME_PROVIDER_FALLBACK=local`) is **not yet implemented** and currently unavailable.
 

@@ -90,6 +90,8 @@ quizme "React rendering and caching"
 
 > 默认 `Haiku` + `Low`：题目生成本质是结构化 JSON 输出，Haiku/low 足够且明显更快、更省。需要更高质量时可在设置页临时调高。
 
+设置页还提供两个操作：**导出调试文件**会把本次会话的全部本地 JSON 以及每次 `claude` 调用的输入/输出打包成一个自包含的 HTML 文件，写入你启动 QuizMe 的目录；**清除设置和缓存**会重置本地配置、统计、画像、复习队列与预取缓存。
+
 ### 环境变量
 
 | 变量 | 作用 |
@@ -104,7 +106,7 @@ quizme "React rendering and caching"
 ## 说明
 
 - 默认模式会从 `~/.claude/projects` 读取当前仓库最近的 Claude Code transcript。统计、档案、设置、复习等功能通过交互式主界面进入。
-- 本地数据为平台 app data 目录下的单个 `quizme.json` 文件，采用原子写入（temp 文件 + rename），当前轮次的题库仅存于内存、不落盘。
+- 本地数据为平台 app data 目录下的单个 `quizme.json` 文件，采用原子写入（temp 文件 + rename）。你正在作答的这批题目存于内存，但下一批会在后台预生成并把缓存落盘，因此未答完的批次可跨重启复用，只有冷启动才会看到加载界面。
 - 题目生成和 `why` 模式会调用本地 `claude` CLI 的 print mode（`--safe-mode` + `--tools ""`，禁用 agent tool；上下文已写入 prompt）。
 - 离线 provider（`QUIZME_PROVIDER=local`、`QUIZME_PROVIDER_FALLBACK=local`）为**暂未实现**的能力，当前不可用。
 
