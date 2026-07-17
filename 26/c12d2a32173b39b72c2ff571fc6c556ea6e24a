@@ -1,0 +1,49 @@
+src/ui/logoLayout.ts
+  s_501cf602f008d9::t_00c0bf3c15c75b 1-2
+  s_501cf602f008d9::t_5a5fa6b9045790 53
+src/ui/components/WelcomeBanner.tsx
+  s_501cf602f008d9::t_8f763d5a0042a2 90
+  s_501cf602f008d9::t_cbc47c0c6b63df 32
+  s_35a8a996e5cb0a::t_ce122d88918710 92,96,100,104-105
+  s_35a8a996e5cb0a::t_14d79ea0bd1d0a 11
+  s_35a8a996e5cb0a::t_8bab382b0ade69 132-136
+src/ui/formatters.ts
+  s_35a8a996e5cb0a::t_b96bc099620765 1,19-31
+  s_35a8a996e5cb0a::t_6700d5be582822 32-33
+src/ui/components/Feed.tsx
+  s_501cf602f008d9::t_a0c811586f5485 100-104
+  s_501cf602f008d9::t_50611ae5d1f928 15-16,19-35
+  s_501cf602f008d9::t_db00f61434fae4 44,47,52,57,63
+  s_501cf602f008d9::t_1100d8199f49ff 70
+  s_501cf602f008d9::t_7f713a225a9b63 2
+  s_501cf602f008d9::t_11c190c36400ee 73
+  s_501cf602f008d9::t_b386aacf111b17 36
+src/ui/textUtils.ts
+  s_501cf602f008d9::t_70266b9bf2eee9 1-46,49-62,67,77,87,92-98,100-101,103-104,106
+docs/direct-api-provider.md
+  s_35a8a996e5cb0a::t_8d58b4a336aa77 1-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "26c12d2a32173b39b72c2ff571fc6c556ea6e24a",
+  "prompts": {},
+  "sessions": {
+    "s_35a8a996e5cb0a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e48a9324-bdad-418d-8ffe-3a33fb00c2a1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_501cf602f008d9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fca31d7e-db12-468f-98f5-6844774c6a6a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
