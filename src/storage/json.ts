@@ -34,6 +34,17 @@ interface ReviewEntry {
   addedAt: string;
 }
 
+/**
+ * A batch of questions generated ahead of time (background prefetch). Persisted
+ * so an unplayed batch survives across runs. `signature` encodes the config
+ * inputs the batch was generated for; a mismatch on read means it's stale.
+ */
+interface QuestionCacheEntry {
+  signature: string;
+  questions: QuizQuestion[];
+  createdAt: string;
+}
+
 interface StoreData {
   version: number;
   config: Record<string, unknown>;
@@ -47,6 +58,7 @@ interface StoreData {
     signals: Record<string, SignalRow>;
   };
   reviewQueue: ReviewEntry[];
+  questionCache: QuestionCacheEntry | null;
 }
 
 function emptyData(): StoreData {
@@ -55,7 +67,25 @@ function emptyData(): StoreData {
     config: {},
     stats: { totalAttempts: 0, correctAttempts: 0, whyCount: 0, byDay: {} },
     profile: { signals: {} },
-    reviewQueue: []
+    reviewQueue: [],
+    questionCache: null
+  };
+}
+
+/**
+ * Validate a persisted cache entry loaded from disk. Returns null for anything
+ * malformed so a hand-edited or older `quizme.json` can never crash a read.
+ */
+function loadQuestionCache(raw: unknown): QuestionCacheEntry | null {
+  if (!raw || typeof raw !== "object") return null;
+  const cache = raw as Partial<QuestionCacheEntry>;
+  if (typeof cache.signature !== "string" || !Array.isArray(cache.questions)) {
+    return null;
+  }
+  return {
+    signature: cache.signature,
+    questions: cache.questions as QuizQuestion[],
+    createdAt: typeof cache.createdAt === "string" ? cache.createdAt : ""
   };
 }
 
@@ -147,7 +177,8 @@ export class JsonStore implements Store {
           byDay: stats.byDay ?? {}
         },
         profile: { signals: parsed.profile?.signals ?? {} },
-        reviewQueue: Array.isArray(parsed.reviewQueue) ? parsed.reviewQueue : []
+        reviewQueue: Array.isArray(parsed.reviewQueue) ? parsed.reviewQueue : [],
+        questionCache: loadQuestionCache(parsed.questionCache)
       };
     } catch {
       return emptyData();
@@ -188,6 +219,30 @@ export class JsonStore implements Store {
 
   clearQuestionBank(): void {
     this.questionBank = [];
+  }
+
+  saveQuestionCache(questions: QuizQuestion[], signature: string): void {
+    this.data.questionCache = {
+      signature,
+      questions,
+      createdAt: new Date().toISOString()
+    };
+    this.persist();
+  }
+
+  takeQuestionCache(signature: string): QuizQuestion[] | null {
+    const cache = this.data.questionCache;
+    if (!cache) return null;
+    // Clear on read either way: a matching batch is consumed once; a stale one
+    // (signature mismatch) is discarded so it can't be handed out later.
+    this.data.questionCache = null;
+    this.persist();
+    return cache.signature === signature ? cache.questions : null;
+  }
+
+  hasQuestionCache(signature: string): boolean {
+    const cache = this.data.questionCache;
+    return !!cache && cache.signature === signature && cache.questions.length > 0;
   }
 
   resetAll(): void {

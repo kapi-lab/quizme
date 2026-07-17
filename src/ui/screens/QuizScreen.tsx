@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { dedupeQuestions } from "../../generation/dedupe.js";
+import { cacheSignature, prefetchInFlight } from "../../generation/prefetch.js";
 import { generateQuestions, generateWhy } from "../../providers/claudeAgent.js";
 import { AppHeader } from "../components/AppHeader.js";
 import { SelectList } from "../components/SelectList.js";
@@ -89,15 +90,31 @@ export function QuizScreen({
           loaded = dedupeQuestions(questionsOverride, recentQuestions).slice(0, 5);
         } else {
           const signals = store.getProfileSignals();
-          const generated = await generateQuestions({
-            source,
-            config,
-            recentQuestions,
-            mode,
-            signals,
-            onProgress: () => {}
-          });
+          const signature = cacheSignature(config, mode);
+          const generate = () =>
+            generateQuestions({ source, config, recentQuestions, mode, signals, onProgress: () => {} });
+
+          // Prefer a background-prefetched batch (instant). If a prefetch is
+          // still mid-flight, await it rather than spawning a second call.
+          let generated = store.takeQuestionCache(signature);
+          if (!generated) {
+            const pending = prefetchInFlight(signature);
+            if (pending) {
+              generated = await pending;
+              store.takeQuestionCache(signature); // consume so it isn't reused
+            }
+          }
+          if (!generated || !generated.length) {
+            generated = await generate();
+          }
+
           loaded = dedupeQuestions(generated, recentQuestions).slice(0, 5);
+          // A stale cache can dedupe to nothing against recent questions —
+          // regenerate live so the round is never empty.
+          if (!loaded.length) {
+            generated = await generate();
+            loaded = dedupeQuestions(generated, recentQuestions).slice(0, 5);
+          }
         }
 
         if (cancelled) return;

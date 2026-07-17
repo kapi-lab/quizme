@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { prefetchQuestions } from "../generation/prefetch.js";
 import { HomeScreen } from "./screens/HomeScreen.js";
 import { QuizScreen } from "./screens/QuizScreen.js";
 import { SettingsScreen } from "./screens/SettingsScreen.js";
@@ -45,6 +46,30 @@ export function App({
       };
     }
   }, [resolveSource]);
+
+  // Warm the question cache in the background so the next `quiz` round starts
+  // instantly. Best-effort and fire-and-forget: skips when a fresh cache
+  // already exists, and swallows the "no source available" case.
+  const warmQuestionCache = useCallback(() => {
+    try {
+      prefetchQuestions({
+        store,
+        config,
+        source: resolveSource({ _: [] }),
+        mode: "mixed",
+        signals: store.getProfileSignals(),
+        recentQuestions: store.listRecentQuestions(20)
+      });
+    } catch {
+      // no Claude sessions to build a source from — nothing to prefetch
+    }
+  }, [store, config, resolveSource]);
+
+  // Prefetch on mount and whenever the config signature changes (a new
+  // signature invalidates the old cache, so a fresh batch is generated).
+  useEffect(() => {
+    warmQuestionCache();
+  }, [warmQuestionCache]);
 
   function startQuiz({
     source,
@@ -106,6 +131,8 @@ export function App({
         onDone={() => {
           setQuizProps(null);
           setScreen("home");
+          // The round just consumed the cache; refill it for the next one.
+          warmQuestionCache();
         }}
       />
     );

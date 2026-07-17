@@ -105,6 +105,20 @@ export interface Store {
   saveQuestion(question: QuizQuestion): void;
   listRecentQuestions(limit?: number): QuizQuestion[];
   clearQuestionBank(): void;
+  /**
+   * Persist a pre-generated batch keyed by a config signature. Unlike the
+   * in-memory question bank, this survives across runs so a batch generated in
+   * the background but never played is reused next launch instead of wasted.
+   */
+  saveQuestionCache(questions: QuizQuestion[], signature: string): void;
+  /**
+   * Return and clear the cached batch if it matches `signature`; null
+   * otherwise. A signature mismatch means the config changed since the batch
+   * was made, so the stale cache is discarded on read.
+   */
+  takeQuestionCache(signature: string): QuizQuestion[] | null;
+  /** Whether a non-empty cached batch matching `signature` is available. */
+  hasQuestionCache(signature: string): boolean;
   recordAttempt(payload: {
     questionId: string;
     selected: string;
