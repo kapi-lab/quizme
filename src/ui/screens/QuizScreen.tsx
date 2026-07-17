@@ -32,6 +32,7 @@ export function QuizScreen({
   source,
   questionsOverride = null,
   mode = "mixed",
+  onQuestionsConsumed,
   onDone
 }: {
   store: Store;
@@ -40,10 +41,20 @@ export function QuizScreen({
   source: SourceSummary;
   questionsOverride?: QuizQuestion[] | null;
   mode?: QuizMode;
+  /**
+   * Called the instant this round's questions are loaded (cache consumed), so
+   * the next batch can start generating during the round. Keeps every round
+   * after the first served from a warm cache — only a cold start can wait.
+   */
+  onQuestionsConsumed?: () => void;
   onDone: () => void;
 }) {
   const isZh = config.language === "zh-CN";
   const [phase, setPhase] = useState<Phase>("generating");
+  // True only when we fall through to a live/awaited generation (cold start /
+  // cache miss). Drives the "first load is slow" tip; a cache hit flips to the
+  // question before this is ever set.
+  const [longLoad, setLongLoad] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -60,6 +71,10 @@ export function QuizScreen({
   const startedAtRef = useRef(Date.now());
   const soundRef = useRef(sound);
   soundRef.current = sound;
+  // Ref (not a dep) so the generation effect isn't re-triggered when App
+  // re-creates the callback.
+  const onConsumedRef = useRef(onQuestionsConsumed);
+  onConsumedRef.current = onQuestionsConsumed;
 
   const question = questions[questionIndex];
   const total = questions.length;
@@ -100,11 +115,13 @@ export function QuizScreen({
           if (!generated) {
             const pending = prefetchInFlight(signature);
             if (pending) {
+              setLongLoad(true); // cold start: waiting on the initial prefetch
               generated = await pending;
               store.takeQuestionCache(signature); // consume so it isn't reused
             }
           }
           if (!generated || !generated.length) {
+            setLongLoad(true); // no cache at all — generate live
             generated = await generate();
           }
 
@@ -129,6 +146,10 @@ export function QuizScreen({
         setPhase("question");
         startedAtRef.current = Date.now();
         soundRef.current.playStart();
+        // Cache consumed — kick off the next batch now so it generates during
+        // this round and the next quiz starts warm. The just-loaded questions
+        // are already in the bank, so the refill dedupes against them.
+        onConsumedRef.current?.();
       } catch (err) {
         if (!cancelled) {
           const message = err instanceof Error ? err.message : String(err);
@@ -350,6 +371,15 @@ export function QuizScreen({
         <Spinner
           label={isZh ? `正在生成题目 (${genElapsed}s)` : `Generating questions (${genElapsed}s)`}
         />
+        {longLoad ? (
+          <Box marginTop={1}>
+            <Text color={theme.inactive} wrap="wrap">
+              {isZh
+                ? "提示：首次加载会花费较长时间，之后的题目会提前准备好，几乎无需等待。"
+                : "Tip: the first load takes a while; later rounds are prepared ahead of time and start almost instantly."}
+            </Text>
+          </Box>
+        ) : null}
         <StatusBar
           status={isZh ? "请稍候" : "Please wait"}
           hints={hintLine([isZh ? "基于当前上下文出题" : "building questions from context"])}

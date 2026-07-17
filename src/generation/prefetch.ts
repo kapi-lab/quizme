@@ -12,11 +12,13 @@ import type {
  * Background pre-generation ("prefetch") for quiz questions.
  *
  * A quiz round costs one full `claude -p` call, and the user waits on it. To
- * hide that latency we generate the next batch ahead of time — on app start
- * and after each round — and persist it via {@link Store.saveQuestionCache}.
- * The next quiz then starts from cache instantly. If the app exits before the
- * batch is played, it survives on disk and is reused next launch, so a
- * prefetch is never wasted.
+ * hide that latency we generate the next batch ahead of time — on app start and
+ * the moment a batch is consumed (round start), so it generates during the
+ * round the user is answering — and persist it via {@link Store.saveQuestionCache}.
+ * The next quiz then starts from cache instantly, so only a cold start (no
+ * cache yet) can ever hit the loading screen. If the app exits before the batch
+ * is played, it survives on disk and is reused next launch, so a prefetch is
+ * never wasted.
  */
 
 /**

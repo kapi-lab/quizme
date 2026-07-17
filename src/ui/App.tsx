@@ -6,6 +6,7 @@ import { SettingsScreen } from "./screens/SettingsScreen.js";
 import { InfoScreen } from "./screens/InfoScreen.js";
 import { formatProfile, formatStats } from "./formatters.js";
 import { createSoundPlayer } from "./sound.js";
+import { exportDebugFile } from "../debug/exportDebug.js";
 import { normalizeConfig } from "../cli/config.js";
 import type { HomeAction } from "./screens/HomeScreen.js";
 import type { QuizMode, QuizQuestion, SourceSummary, Store, UserConfig } from "../types.js";
@@ -128,10 +129,15 @@ export function App({
         source={quizProps.source}
         questionsOverride={quizProps.questionsOverride}
         mode={quizProps.mode}
+        // Refill the moment the round starts (cache consumed), so the next
+        // batch generates during this round instead of after it — only a cold
+        // start can then hit the loading screen.
+        onQuestionsConsumed={warmQuestionCache}
         onDone={() => {
           setQuizProps(null);
           setScreen("home");
-          // The round just consumed the cache; refill it for the next one.
+          // Backstop: if the consume-time refill failed (returned no batch),
+          // this retries. No-op when a fresh cache already exists or is in-flight.
           warmQuestionCache();
         }}
       />
@@ -154,6 +160,7 @@ export function App({
           setConfig(normalizeConfig({}));
           setScreen("home");
         }}
+        onExportDebug={() => exportDebugFile({ config })}
         onBack={() => setScreen("home")}
       />
     );

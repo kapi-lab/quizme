@@ -4,6 +4,7 @@ import { AppHeader } from "../components/AppHeader.js";
 import { SelectList } from "../components/SelectList.js";
 import { StatusBar } from "../components/StatusBar.js";
 import { hintLine, theme } from "../theme.js";
+import type { ExportResult } from "../../debug/exportDebug.js";
 import type { ClaudeEffort, Level, SoundPlayer, UserConfig } from "../../types.js";
 
 const LEVELS = [
@@ -33,18 +34,21 @@ export function SettingsScreen({
   sound,
   onPersist,
   onReset,
+  onExportDebug,
   onBack
 }: {
   config: UserConfig;
   sound: SoundPlayer;
   onPersist: (config: UserConfig) => void;
   onReset: () => void;
+  onExportDebug: () => ExportResult;
   onBack: () => void;
 }) {
   const isZh = config.language === "zh-CN";
   const [step, setStep] = useState<
-    "menu" | "level" | "goal" | "model" | "effort" | "confirm-reset"
+    "menu" | "level" | "goal" | "model" | "effort" | "confirm-reset" | "export-result"
   >("menu");
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
   const [menuIndex, setMenuIndex] = useState(0);
   const [levelIndex, setLevelIndex] = useState(
     Math.max(0, LEVELS.findIndex((l) => l.id === config.level))
@@ -74,6 +78,7 @@ export function SettingsScreen({
           id: "effort",
           label: `题目 Effort: ${config.claudeEffort ?? "默认"}`
         },
+        { id: "export", label: "导出调试文件" },
         { id: "reset", label: "清除设置和缓存" },
         { id: "back", label: "返回" }
       ]
@@ -90,6 +95,7 @@ export function SettingsScreen({
           id: "effort",
           label: `Quiz effort: ${config.claudeEffort ?? "default"}`
         },
+        { id: "export", label: "Export debug file" },
         { id: "reset", label: "Clear settings & cache" },
         { id: "back", label: "Back" }
       ];
@@ -149,6 +155,17 @@ export function SettingsScreen({
           setStep("goal");
           return;
         }
+        if (action === "export") {
+          const result = onExportDebug();
+          if (result.ok) {
+            soundRef.current.playSelect();
+          } else {
+            soundRef.current.playIncorrect();
+          }
+          setExportResult(result);
+          setStep("export-result");
+          return;
+        }
         if (action === "reset") {
           setStep("confirm-reset");
           return;
@@ -158,6 +175,14 @@ export function SettingsScreen({
         }
       }
       if (key.escape) onBack();
+      return;
+    }
+
+    if (step === "export-result") {
+      if (key.return || key.escape || input === "q") {
+        setExportResult(null);
+        setStep("menu");
+      }
       return;
     }
 
@@ -322,6 +347,37 @@ export function SettingsScreen({
         <StatusBar
           status={isZh ? "每日目标" : "Daily goal"}
           hints={hintLine([isZh ? "输入 1-9" : "type 1-9", isZh ? "Esc 返回" : "esc back"])}
+        />
+      </Box>
+    );
+  }
+
+  if (step === "export-result") {
+    return (
+      <Box flexDirection="column">
+        <AppHeader
+          title="QuizMe"
+          subtitle={isZh ? "设置 · 导出调试文件" : "Settings · Export debug file"}
+        />
+        <Box marginTop={1} flexDirection="column">
+          {exportResult?.ok ? (
+            <>
+              <Text color={theme.claude}>
+                {isZh ? "调试文件已导出：" : "Debug file exported to:"}
+              </Text>
+              <Box marginTop={1}>
+                <Text color={theme.text}>{exportResult.path}</Text>
+              </Box>
+            </>
+          ) : (
+            <Text color={theme.warning}>
+              {(isZh ? "导出失败：" : "Export failed: ") + (exportResult?.ok ? "" : exportResult?.error ?? "")}
+            </Text>
+          )}
+        </Box>
+        <StatusBar
+          status={isZh ? "导出" : "Export"}
+          hints={hintLine([isZh ? "Enter 或 q 返回" : "enter or q to go back"])}
         />
       </Box>
     );

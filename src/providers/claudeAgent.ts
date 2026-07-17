@@ -7,6 +7,7 @@ import { QUESTION_SCHEMA } from "../generation/schema.js";
 import { buildQuizPrompt } from "../generation/prompts/quiz.js";
 import { buildWhyPrompt } from "../generation/prompts/why.js";
 import { validateQuestions } from "../generation/validator.js";
+import { recordInteraction } from "../debug/interactionLog.js";
 import { recordOwnSession } from "../storage/sessionExclusions.js";
 import type {
   ClaudeEffort,
@@ -404,7 +405,7 @@ export async function generateQuestions({
   const prompt = buildQuizPrompt({ source, config, recentQuestions, mode, signals });
   const events: ClaudeEvent[] = [];
 
-  await runClaude(
+  const rawOutput = await runClaude(
     [
       ...buildModelArgs(config.claudeModel, config.claudeEffort),
       "-p",
@@ -423,6 +424,14 @@ export async function generateQuestions({
       }
     }
   );
+
+  recordInteraction({
+    kind: "quiz",
+    model: config.claudeModel,
+    effort: config.claudeEffort,
+    prompt,
+    rawOutput
+  });
 
   const parsed = parseQuestionsFromEvents(events);
   if (!parsed) {
@@ -455,7 +464,7 @@ export async function generateWhy({
   const events: ClaudeEvent[] = [];
   let streamedText = "";
 
-  await runClaude(
+  const rawOutput = await runClaude(
     ["-p", ...buildWhyModelArgs(), "--output-format", "stream-json", "--verbose", prompt],
     {
       onEvent: (event) => {
@@ -471,6 +480,14 @@ export async function generateWhy({
       }
     }
   );
+
+  recordInteraction({
+    kind: "why",
+    model: process.env.QUIZME_CLAUDE_WHY_MODEL?.trim() || undefined,
+    effort: (process.env.QUIZME_CLAUDE_WHY_EFFORT?.trim() as ClaudeEffort | undefined) || undefined,
+    prompt,
+    rawOutput
+  });
 
   if (streamedText) {
     return streamedText;
