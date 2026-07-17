@@ -5,7 +5,7 @@ export type QuizMode = "mixed" | "review";
 /** Effort levels accepted by the `claude` CLI `--effort` flag. */
 export type ClaudeEffort = "low" | "medium" | "high" | "xhigh" | "max";
 
-export type SourceType = "manual" | "topic" | "repo" | "claude_session";
+type SourceType = "manual" | "topic" | "repo" | "claude_session";
 export type QuestionSourceMode = "contextual" | "adjacent" | "interview_style";
 
 export interface SourceSummary {

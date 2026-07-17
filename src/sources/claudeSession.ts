@@ -137,7 +137,7 @@ function pickRandom<T>(items: readonly T[], count: number): T[] {
     .map((i) => items[i]);
 }
 
-export function getClaudeSummaryFromFile(filePath: string, cwd = process.cwd()): SourceSummary {
+function getClaudeSummaryFromFile(filePath: string, cwd = process.cwd()): SourceSummary {
   const rows = parseJsonLines(filePath);
   const { promptPreview } = summarizeRows(rows);
   const userMessages = rows

@@ -5,9 +5,9 @@ const BORDER_PADDING = 4;
 const DIVIDER_WIDTH = 1;
 const CONTENT_PADDING = 2;
 
-export type LayoutMode = "horizontal" | "compact";
+type LayoutMode = "horizontal" | "compact";
 
-export type LayoutDimensions = {
+type LayoutDimensions = {
   leftWidth: number;
   rightWidth: number;
   totalWidth: number;

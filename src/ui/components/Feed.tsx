@@ -2,7 +2,7 @@ import { Box, Text } from "ink";
 import { displayWidth, truncate } from "../textUtils.js";
 import { theme } from "../theme.js";
 
-export type FeedLine = {
+type FeedLine = {
   text: string;
   timestamp?: string;
 };

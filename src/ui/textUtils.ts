@@ -112,11 +112,3 @@ export function wrapText(text: string, width: number): string[] {
 
   return lines.length ? lines : [""];
 }
-
-export function shortenPath(path: string, max = 42): string {
-  const home = process.env.HOME;
-  const normalized = home && path.startsWith(home)
-    ? `~${path.slice(home.length)}`
-    : path;
-  return truncate(normalized, max);
-}

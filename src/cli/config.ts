@@ -1,5 +1,5 @@
 import { runInkSetup } from "../ui/renderApp.js";
-import type { ClaudeEffort, Language, Level, Store, UserConfig } from "../types.js";
+import type { ClaudeEffort, Store, UserConfig } from "../types.js";
 
 const DEFAULT_CLAUDE_MODEL = "haiku";
 const DEFAULT_CLAUDE_EFFORT: ClaudeEffort = "low";
@@ -47,22 +47,3 @@ export function normalizeConfig(config: Partial<UserConfig> = {}): UserConfig {
     claudeEffort
   };
 }
-
-function pickLevel(value: string | number): Level {
-  switch (String(value).trim()) {
-    case "1": return "junior";
-    case "3": return "senior";
-    case "4": return "staff";
-    default: return "mid";
-  }
-}
-
-export function isValidLevel(value: string): value is Level {
-  return value === "junior" || value === "mid" || value === "senior" || value === "staff";
-}
-
-export function isValidLanguage(value: string): value is Language {
-  return value === "zh-CN" || value === "en";
-}
-
-export { pickLevel };

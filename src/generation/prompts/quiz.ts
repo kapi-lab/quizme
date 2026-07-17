@@ -13,7 +13,7 @@ import type {
  * decoupled from the dynamic context (signals, recent questions, source)
  * assembled by {@link buildQuizPrompt} below.
  */
-export const QUIZ_PROMPT_INSTRUCTIONS = [
+const QUIZ_PROMPT_INSTRUCTIONS = [
   "You are QuizMe, a CLI technical interview quiz generator for developers.",
   "Return strict JSON only, matching the provided schema.",
   "Generate exactly 5 multiple-choice questions with exactly 4 choices (ids A, B, C, D) and exactly one best answer.",
