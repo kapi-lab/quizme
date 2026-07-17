@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { getOwnSessionIds, pruneStaleExclusions } from "../storage/sessionExclusions.js";
 import type { SourceSummary } from "../types.js";
 
 function getClaudeProjectsDir(): string {
@@ -73,6 +74,14 @@ function summarizeRows(rows: JsonRecord[]): SessionPreview {
 }
 
 /**
+ * How many of the most recent sessions to draw candidates from. Sampling a
+ * pool (not just the single newest) keeps the background context fresh across
+ * runs — the same question set isn't always anchored to whichever session
+ * happened to be touched last.
+ */
+const RECENT_SESSION_POOL = 10;
+
+/**
  * Scan every `~/.claude/projects/<project>/*.jsonl` transcript globally and return them
  * sorted by mtime (newest first). Scanning globally — rather than only the
  * current project dir — is intentional: users fire QuizMe from any directory
@@ -84,7 +93,7 @@ function listAllSessionFiles(): string[] {
   if (!fs.existsSync(projectsDir)) {
     return [];
   }
-  return fs.readdirSync(projectsDir)
+  const allFiles = fs.readdirSync(projectsDir)
     .flatMap((entry) => {
       const dir = path.join(projectsDir, entry);
       try {
@@ -95,6 +104,17 @@ function listAllSessionFiles(): string[] {
       }
     })
     .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+
+  // An excluded id only matters while its transcript still ranks within the
+  // pool window; once newer sessions push it further down the mtime order it
+  // can never climb back in, so there's nothing left for the exclusion to do.
+  pruneStaleExclusions(allFiles.map((filePath) => path.basename(filePath, ".jsonl")), RECENT_SESSION_POOL);
+
+  // Exclude transcripts QuizMe's own `claude -p` calls produced — otherwise a
+  // scan can read back QuizMe's own generated prompt/output as "recent
+  // session" context. See recordOwnSession() in claudeAgent.ts.
+  const ownSessionIds = getOwnSessionIds();
+  return allFiles.filter((filePath) => !ownSessionIds.has(path.basename(filePath, ".jsonl")));
 }
 
 /**
@@ -146,14 +166,6 @@ export function getClaudeSummaryFromFile(filePath: string, cwd = process.cwd()):
     ].join("\n")
   };
 }
-
-/**
- * How many of the most recent sessions to draw candidates from. Sampling a
- * pool (not just the single newest) keeps the background context fresh across
- * runs — the same question set isn't always anchored to whichever session
- * happened to be touched last.
- */
-const RECENT_SESSION_POOL = 10;
 
 /**
  * How many sessions from the pool to actually feed into the prompt as
