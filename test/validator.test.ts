@@ -21,8 +21,7 @@ const validQuestion = {
     C: "useMemo memoizes a value, not a function reference.",
     D: "useRef holds a mutable ref, not a callback."
   },
-  tags: ["react", "hooks"],
-  followUps: ["reconciliation"]
+  tags: ["react", "hooks"]
 };
 
 test("accepts a well-formed question batch", () => {

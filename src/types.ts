@@ -30,7 +30,6 @@ export interface QuizQuestion {
   explanation: string;
   whyWrong: Record<string, string>;
   tags: string[];
-  followUps: string[];
 }
 
 export interface UserConfig {

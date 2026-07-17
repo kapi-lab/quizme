@@ -102,11 +102,6 @@ function validateOne(raw: unknown, index: number, issues: string[]): QuizQuestio
     errs.push(`${at}.tags must be a non-empty array of strings`);
   }
 
-  const followUps = raw.followUps;
-  if (!Array.isArray(followUps) || followUps.some((t) => typeof t !== "string")) {
-    errs.push(`${at}.followUps must be an array of strings`);
-  }
-
   if (errs.length) {
     issues.push(...errs);
     return null;
@@ -122,8 +117,7 @@ function validateOne(raw: unknown, index: number, issues: string[]): QuizQuestio
     answer: answer as string,
     explanation: (raw.explanation as string).trim(),
     whyWrong: whyWrong as Record<string, string>,
-    tags: (tags as string[]).map((t) => t.trim()),
-    followUps: (followUps as string[]).map((t) => t.trim())
+    tags: (tags as string[]).map((t) => t.trim())
   };
 }
 

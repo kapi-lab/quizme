@@ -36,13 +36,9 @@ export const QUESTION_SCHEMA = {
             type: "array",
             minItems: 1,
             items: { type: "string" }
-          },
-          followUps: {
-            type: "array",
-            items: { type: "string" }
           }
         },
-        required: ["id", "sourceMode", "topic", "difficulty", "question", "choices", "answer", "explanation", "whyWrong", "tags", "followUps"]
+        required: ["id", "sourceMode", "topic", "difficulty", "question", "choices", "answer", "explanation", "whyWrong", "tags"]
       }
     }
   },
