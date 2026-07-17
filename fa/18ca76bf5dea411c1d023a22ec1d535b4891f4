@@ -1,0 +1,29 @@
+README.md
+  s_332b227c430382::t_270ee6eb0a0b96 93-94
+  s_332b227c430382::t_420f511fe149f3 109
+package.json
+  s_332b227c430382::t_33caa0994270f6 3
+CHANGELOG.md
+  s_332b227c430382::t_1d552994066e57 1-43
+package-lock.json
+  s_332b227c430382::t_673d6b3832c30c 3,9
+README.zh-CN.md
+  s_332b227c430382::t_510279674e1b5a 109
+  s_332b227c430382::t_ccb26f80d5c535 93-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "fa18ca76bf5dea411c1d023a22ec1d535b4891f4",
+  "prompts": {},
+  "sessions": {
+    "s_332b227c430382": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b3391b7f-f449-4608-871a-1b336d12d9d7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
