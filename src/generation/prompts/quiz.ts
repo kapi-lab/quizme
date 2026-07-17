@@ -7,6 +7,15 @@ import type {
 } from "../../types.js";
 
 /**
+ * First line of every quiz prompt. Distinctive enough to double as a marker:
+ * a transcript containing this string is one of QuizMe's own `claude -p`
+ * calls, so session-context scans skip it instead of reading QuizMe's own
+ * prompt/output back as "recent session" material. See getLatestClaudeSummary.
+ */
+export const QUIZ_PROMPT_MARKER =
+  "You are QuizMe, a CLI technical interview quiz generator for developers.";
+
+/**
  * Static instructional text for quiz generation.
  *
  * This is the part you tune when iterating on quiz quality — keep it
@@ -14,7 +23,7 @@ import type {
  * assembled by {@link buildQuizPrompt} below.
  */
 const QUIZ_PROMPT_INSTRUCTIONS = [
-  "You are QuizMe, a CLI technical interview quiz generator for developers.",
+  QUIZ_PROMPT_MARKER,
   "Respond immediately with the final JSON. Do not think out loud, plan, or deliberate first — go straight to the answer to keep latency low.",
   "Return strict JSON only, matching the provided schema.",
   "Generate exactly 5 multiple-choice questions with exactly 4 choices (ids A, B, C, D) and exactly one best answer.",

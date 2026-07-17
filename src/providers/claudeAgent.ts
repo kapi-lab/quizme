@@ -8,7 +8,6 @@ import { buildQuizPrompt } from "../generation/prompts/quiz.js";
 import { buildWhyPrompt } from "../generation/prompts/why.js";
 import { validateQuestions } from "../generation/validator.js";
 import { recordInteraction } from "../debug/interactionLog.js";
-import { recordOwnSession } from "../storage/sessionExclusions.js";
 import type {
   ClaudeEffort,
   ProfileSignal,
@@ -268,13 +267,6 @@ async function runClaude(
       reject(new Error("Claude timed out after " + timeout / 1000 + "s"));
     }, timeout);
 
-    // Every stream-json event carries the same `session_id`, which is also
-    // the transcript's filename (`~/.claude/projects/<cwd>/<session_id>.jsonl`).
-    // Recording it lets a later "recent session" context scan skip the
-    // transcript this exact call is about to write, instead of reading
-    // QuizMe's own prompt/output back as background context.
-    let sessionIdRecorded = false;
-
     let buffer = "";
     child.stdout.on("data", (chunk) => {
       buffer += chunk.toString();
@@ -296,11 +288,6 @@ async function runClaude(
         }
         if (isObject(event) && event.type === "result" && event.is_error && typeof event.result === "string") {
           resultErrorMessage = event.result;
-        }
-        const sessionId = isObject(event) ? (event as JsonRecord).session_id : undefined;
-        if (!sessionIdRecorded && typeof sessionId === "string") {
-          sessionIdRecorded = true;
-          recordOwnSession(sessionId);
         }
         if (onEvent) {
           onEvent(event as ClaudeEvent);
