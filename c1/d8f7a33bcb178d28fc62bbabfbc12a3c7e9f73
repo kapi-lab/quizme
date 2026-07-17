@@ -1,0 +1,32 @@
+src/ui/components/Feed.tsx
+  s_76df3d3f31e0ee::t_7536df6a3c9f79 5
+src/cli/config.ts
+  s_76df3d3f31e0ee::t_4be2c2b5d4ab06 2
+src/generation/prompts/quiz.ts
+  s_76df3d3f31e0ee::t_f389f36d76ec42 16
+src/generation/prompts/why.ts
+  s_76df3d3f31e0ee::t_b3fa2fb8e1d2a3 10
+src/sources/claudeSession.ts
+  s_76df3d3f31e0ee::t_102e14bd9207a1 140
+src/ui/logoLayout.ts
+  s_76df3d3f31e0ee::t_4259fecd67ebca 8
+  s_76df3d3f31e0ee::t_29ecdf35b6f1a3 10
+src/types.ts
+  s_76df3d3f31e0ee::t_1fc70825a08016 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "c1d8f7a33bcb178d28fc62bbabfbc12a3c7e9f73",
+  "prompts": {},
+  "sessions": {
+    "s_76df3d3f31e0ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ab466ad9-5ce3-42ae-885a-af972c1c5ec1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
