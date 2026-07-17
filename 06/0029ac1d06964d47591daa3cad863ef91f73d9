@@ -1,0 +1,38 @@
+test/store.test.ts
+  s_35a8a996e5cb0a::t_e28c934959695b 74-100
+AGENTS.md
+  s_35a8a996e5cb0a::t_5402423c136936 50-51
+src/types.ts
+  s_35a8a996e5cb0a::t_0f0f2af5868029 108-121
+src/ui/App.tsx
+  s_35a8a996e5cb0a::t_6dd0ca85c6a2b3 1-2
+  s_35a8a996e5cb0a::t_a9aa0704417e3e 134-135
+  s_35a8a996e5cb0a::t_9a8aa5c385f32d 50-73
+src/storage/json.ts
+  s_35a8a996e5cb0a::t_e7364e35993daf 180-181
+  s_35a8a996e5cb0a::t_b8ed15d1734a20 222,224-245
+  s_35a8a996e5cb0a::t_e0d4c86a7e58f2 70-88
+  s_35a8a996e5cb0a::t_0b5d1f044db85a 37-47,61
+  s_35a8a996e5cb0a::t_2f357054f3f8c1 223
+src/generation/prefetch.ts
+  s_35a8a996e5cb0a::t_c93cd685c4415a 1-87
+src/ui/screens/QuizScreen.tsx
+  s_35a8a996e5cb0a::t_c3009fad45972b 93-110,112-117
+  s_35a8a996e5cb0a::t_1a20555ce82d07 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "060029ac1d06964d47591daa3cad863ef91f73d9",
+  "prompts": {},
+  "sessions": {
+    "s_35a8a996e5cb0a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e48a9324-bdad-418d-8ffe-3a33fb00c2a1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
