@@ -162,8 +162,8 @@ export function App({
   if (screen === "stats") {
     return (
       <InfoScreen
-        title="QuizMe Stats"
-        lines={formatStats(store)}
+        title={isZh ? "QuizMe 统计" : "QuizMe Stats"}
+        lines={formatStats(store, isZh)}
         isZh={isZh}
         onBack={() => setScreen("home")}
       />
@@ -173,8 +173,8 @@ export function App({
   if (screen === "profile") {
     return (
       <InfoScreen
-        title="QuizMe Profile"
-        lines={formatProfile(store)}
+        title={isZh ? "QuizMe 画像" : "QuizMe Profile"}
+        lines={formatProfile(store, isZh)}
         isZh={isZh}
         onBack={() => setScreen("home")}
       />

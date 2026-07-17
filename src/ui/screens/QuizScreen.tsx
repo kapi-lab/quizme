@@ -414,7 +414,7 @@ export function QuizScreen({
       <AppHeader title="QuizMe" subtitle={quizSubtitle} />
       {overlay === "stats" ? (
         <Box flexDirection="column">
-          {formatStats(store).map((line, index) => (
+          {formatStats(store, isZh).map((line, index) => (
             <Text
               key={line}
               color={index === 0 ? theme.claude : theme.text}
@@ -426,7 +426,7 @@ export function QuizScreen({
         </Box>
       ) : overlay === "profile" ? (
         <Box flexDirection="column">
-          {formatProfile(store).map((line, index) => (
+          {formatProfile(store, isZh).map((line, index) => (
             <Text
               key={line}
               color={index === 0 ? theme.claude : theme.text}
