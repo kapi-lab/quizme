@@ -1,0 +1,55 @@
+src/generation/prefetch.ts
+  s_88bc1bc89161cc::t_482743ccfba0ec 15-21
+src/debug/exportDebug.ts
+  s_88bc1bc89161cc::t_10377ae980172d 5
+  s_88bc1bc89161cc::t_08eeacffda5337 1-4,6-208,210-248
+  s_88bc1bc89161cc::t_a26d40138ec0b2 209
+src/debug/interactionLog.ts
+  s_88bc1bc89161cc::t_3e50a3583f9243 1-57
+src/providers/claudeAgent.ts
+  s_88bc1bc89161cc::t_8278192953d58e 10
+  s_88bc1bc89161cc::t_1856d6fd9f35c3 467,484-490
+  s_88bc1bc89161cc::t_121b764aef21b2 408,428-434
+  s_88bc1bc89161cc::t_4f868d3b59746f 435
+  s_88bc1bc89161cc::t_61fce34e8e7860 491
+src/ui/screens/SettingsScreen.tsx
+  s_88bc1bc89161cc::t_ef52b1139c581c 181-188
+  s_88bc1bc89161cc::t_d7f614402b7c28 355-385
+  s_88bc1bc89161cc::t_7b300013d7bc64 81
+  s_88bc1bc89161cc::t_e426b7d34e23f6 7
+  s_88bc1bc89161cc::t_8426d15ae1d543 37,44,49,51
+  s_88bc1bc89161cc::t_d7fde9739851a8 98
+  s_88bc1bc89161cc::t_5d7c8be273d977 158-168
+src/storage/index.ts
+  s_88bc1bc89161cc::t_2186dcdef5c350 28-39,48
+src/ui/screens/QuizScreen.tsx
+  s_88bc1bc89161cc::t_0f623ae61c46b8 118,124
+  s_88bc1bc89161cc::t_a66358d824b16a 74-77
+  s_88bc1bc89161cc::t_aec166c1c430c4 374-382
+  s_88bc1bc89161cc::t_d9d268a4005a96 35,44-49,54-57
+  s_88bc1bc89161cc::t_9e3954b866ba34 149-152
+AGENTS.md
+  s_88bc1bc89161cc::t_218563fa2f653f 51
+.gitignore
+  s_88bc1bc89161cc::t_6d07eaeef168b4 8
+src/ui/App.tsx
+  s_88bc1bc89161cc::t_f865661fd64d50 132-135,139-140
+  s_88bc1bc89161cc::t_61ae83bb07e8b4 9
+  s_88bc1bc89161cc::t_d2d3d73db303c4 163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "5422166637515de73a6bf477ea7d81159c4bc7a6",
+  "prompts": {},
+  "sessions": {
+    "s_88bc1bc89161cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b79f0644-ffbd-4955-96d6-00e362cdcae1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
