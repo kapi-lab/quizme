@@ -1,0 +1,27 @@
+src/ui/formatters.ts
+  s_e764314cc0d862::t_c494697aaab98a 34,36-54,61
+  s_e764314cc0d862::t_576cffe20abfaf 72,74-76,81-87,90-91,94-101,103,107-109
+  s_e764314cc0d862::t_29faf87605e2bb 112,114
+src/ui/App.tsx
+  s_e764314cc0d862::t_abe4783fbb4a83 176-177
+  s_e764314cc0d862::t_e197d9e7e0c58a 165-166
+src/ui/screens/QuizScreen.tsx
+  s_e764314cc0d862::t_f4107882dad510 429
+  s_e764314cc0d862::t_8d234e34ad4675 417
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "8058d3ca87cf810269d52ba8f223ccdc0b267d70",
+  "prompts": {},
+  "sessions": {
+    "s_e764314cc0d862": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f56fd0ce-e369-487c-8192-ff8f4baf3bd6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
