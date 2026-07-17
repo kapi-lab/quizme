@@ -24,7 +24,7 @@ QuizMe is a local-first CLI MVP that turns Claude Code session context, reposito
           Generation · prompts + schema + validator + dedupe
                        │  builds a prompt carrying the context
                        ▼
-            ClaudeAgent ─► `claude` CLI  (print mode: --bare --tools "")
+            ClaudeAgent ─► `claude` CLI  (print mode: --safe-mode --tools "")
                        │  returns structured JSON questions
                        ▼
             Storage (quizme.json, atomic temp+rename)
@@ -105,7 +105,7 @@ On first run you'll be guided to choose a language and level; from the in-app **
 
 - Default mode reads the most recent Claude Code transcript for the current repo from `~/.claude/projects`. Stats, archive, settings, and review features are accessible from the interactive main menu.
 - Local data is a single `quizme.json` file in the platform app-data directory, written atomically (temp file + rename). The current round's question bank lives in memory only and is never persisted.
-- Question generation and `why` mode invoke the local `claude` CLI in print mode (`--bare` + `--tools ""`, agent tools disabled; context is written into the prompt).
+- Question generation and `why` mode invoke the local `claude` CLI in print mode (`--safe-mode` + `--tools ""`, agent tools disabled; context is written into the prompt).
 - The offline provider (`QUIZME_PROVIDER=local`, `QUIZME_PROVIDER_FALLBACK=local`) is **not yet implemented** and currently unavailable.
 
 ## License

@@ -45,7 +45,7 @@ docs/         product.md, technical.md (Chinese product/design docs)
 ## Key facts and constraints
 
 - **Runtime**: Node ≥ 20, ESM (`"type": "module"`), TypeScript strict. Source runs via `tsx`; published package ships only `dist/`.
-- **Claude CLI is the model backend**: generation + `why` mode spawn the local `claude` executable in print mode (`--bare`, `--tools ""` — agent tools disabled, context is embedded in the prompt). Never assume API keys or `@anthropic-ai/sdk`.
+- **Claude CLI is the model backend**: generation + `why` mode spawn the local `claude` executable in print mode (`--safe-mode`, `--tools ""` — agent tools disabled, context is embedded in the prompt). Never assume API keys or `@anthropic-ai/sdk`.
 - **`claude` binary resolution**: resolved from `PATH`; override with `QUIZME_CLAUDE_BIN` (absolute path). If you touch provider code, preserve this fallback.
 - **Data layer is JSON, not SQLite**: all persisted state (config, aggregate stats, profile signals, the pending review queue) lives in a single `quizme.json` written atomically via temp-file + rename. The current round's question bank is in-memory only and never persisted. (`App-Data dir` from `getAppDataDir()`; `QUIZME_DATA_DIR` overrides; `./.quizme` is the last-resort fallback.)
 - **Config normalization**: `src/cli/config.ts` `normalizeConfig` fills defaults — `claudeModel` defaults to `"haiku"`, `claudeEffort` to `"low"`, `language` to `"en"`, `level` to `"mid"`, `dailyGoal` to `5`. When adding a config field, update both `normalizeConfig` and the `UserConfig` type in `types.ts`.

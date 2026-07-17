@@ -41,6 +41,7 @@ type ClaudeAssistantEvent = {
 type ClaudeResultEvent = {
   type: "result";
   result?: string;
+  is_error?: boolean;
 };
 
 type ClaudeEvent = ClaudeAssistantEvent | ClaudeResultEvent | JsonRecord;
@@ -74,12 +75,14 @@ function extractQuestionsPayload(value: unknown): { questions?: unknown[] } | nu
 
 /**
  * Print-mode hardening for scripted calls.
- * - `--bare`: skip hooks, MCP, CLAUDE.md auto-discovery, etc.
+ * - `--safe-mode`: skip hooks, MCP, CLAUDE.md auto-discovery, etc., but keep
+ *   normal OAuth/keychain auth working (`--bare` forces API-key-only auth and
+ *   reports "Not logged in" for OAuth/subscription accounts).
  * - `--tools ""`: disable built-in agent tools (Read/Bash/Edit/...).
  * Context is already embedded in the prompt; `--json-schema` structured output
  * is separate from the built-in tool set.
  */
-const CLAUDE_PRINT_SECURITY_ARGS = ["--bare", "--tools", ""] as const;
+const CLAUDE_PRINT_SECURITY_ARGS = ["--safe-mode", "--tools", ""] as const;
 
 /**
  * Effort levels accepted by `claude --effort`. Anything outside this set is
@@ -252,6 +255,10 @@ async function runClaude(
     const chunks: string[] = [];
     let stderr = "";
     let timedOut = false;
+    // `claude -p` reports failures (e.g. "Not logged in") as a `result` event
+    // on stdout with `is_error: true`, not on stderr. Track the last one so a
+    // non-zero exit surfaces that message instead of a bare exit code.
+    let resultErrorMessage: string | undefined;
 
     const timer = setTimeout(() => {
       timedOut = true;
@@ -271,13 +278,18 @@ async function runClaude(
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed) continue;
+        let event: ClaudeEvent | undefined;
+        try {
+          event = JSON.parse(trimmed);
+        } catch {
+          // not a JSON event line, ignore
+          continue;
+        }
+        if (isObject(event) && event.type === "result" && event.is_error && typeof event.result === "string") {
+          resultErrorMessage = event.result;
+        }
         if (onEvent) {
-          try {
-            const event = JSON.parse(trimmed);
-            onEvent(event);
-          } catch {
-            // not a JSON event line, ignore
-          }
+          onEvent(event as ClaudeEvent);
         }
       }
     });
@@ -292,7 +304,7 @@ async function runClaude(
         return;
       }
       if (code !== 0) {
-        const msg = stderr.trim() || `claude exited with code ${code}`;
+        const msg = resultErrorMessage || stderr.trim() || `claude exited with code ${code}`;
         reject(new Error(msg));
         return;
       }
