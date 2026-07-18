@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import { JsonStore } from "../src/storage/json.js";
-import type { QuizQuestion } from "../src/types.js";
+import type { KpAnchor, KpCandidate, QuizQuestion } from "../src/types.js";
 
 function makeTempStore(): JsonStore {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "quizme-test-"));
@@ -175,6 +175,87 @@ test("a corrupt store file falls back to empty data", () => {
   assert.deepEqual(store.getConfig("user"), { level: "mid" });
 });
 
+const sampleCandidate: KpCandidate = {
+  name: "Git Rebase vs Merge",
+  essence: "Rewriting shared history invalidates what others depend on.",
+  domain: ["git"],
+  suggestedDepth: 3,
+  relevance: 0.9,
+  anchor: "the assistant ran git rebase -i"
+};
+
+const sampleAnchor: KpAnchor = {
+  sourceType: "claude_session",
+  title: "session.jsonl",
+  at: "2026-07-16T12:00:00.000Z"
+};
+
+test("upsertKnowledgePoint dedupes by normalized name and appends provenance", () => {
+  const store = makeTempStore();
+  const first = store.upsertKnowledgePoint(sampleCandidate, sampleAnchor);
+  assert.equal(first.name, "git-rebase-vs-merge");
+  assert.equal(first.targetDepth, 3);
+  // First exposure starts at working depth, not deep.
+  assert.equal(first.currentDepth, 2);
+  assert.equal(first.provenance.length, 1);
+
+  const again = store.upsertKnowledgePoint(
+    { ...sampleCandidate, name: "  git rebase VS merge " },
+    { ...sampleAnchor, title: "other.jsonl" }
+  );
+  assert.equal(again.id, first.id);
+  assert.equal(store.listKnowledgePoints().length, 1);
+  assert.equal(again.provenance.length, 2);
+});
+
+test("never-asked knowledge points are not listed as due", () => {
+  const store = makeTempStore();
+  store.upsertKnowledgePoint(sampleCandidate, sampleAnchor);
+  assert.equal(store.listDueKnowledgePoints().length, 0);
+});
+
+test("a lapsed knowledge point comes due the next day with a fresh ask recorded", () => {
+  const store = makeTempStore();
+  const kp = store.upsertKnowledgePoint(sampleCandidate, sampleAnchor);
+
+  // Acceptance scenario: answered wrong "yesterday"...
+  const yesterday = new Date(Date.now() - 86_400_000 - 60_000);
+  const rated = store.rateKnowledgePoint(kp.id, "again", "What breaks when you rebase a shared branch?", yesterday);
+  assert.ok(rated);
+  assert.equal(rated?.srs.lapses, 1);
+  assert.equal(rated?.recentAsks.length, 1);
+  // ...demoted one depth level...
+  assert.equal(rated?.currentDepth, 1);
+
+  // ...and due today, surviving a reload from disk.
+  const filePath = (store as unknown as { filePath: string }).filePath;
+  const reloaded = new JsonStore(filePath);
+  reloaded.init();
+  const due = reloaded.listDueKnowledgePoints();
+  assert.equal(due.length, 1);
+  assert.equal(due[0].id, kp.id);
+});
+
+test("a correctly answered knowledge point is scheduled out and not due today", () => {
+  const store = makeTempStore();
+  const kp = store.upsertKnowledgePoint(sampleCandidate, sampleAnchor);
+  store.rateKnowledgePoint(kp.id, "good", "q1");
+  assert.equal(store.listDueKnowledgePoints().length, 0);
+  // ...but visible when looking a day ahead.
+  assert.equal(store.listDueKnowledgePoints(new Date(Date.now() + 86_400_000 + 60_000)).length, 1);
+});
+
+test("recentAsks is capped at 8 entries", () => {
+  const store = makeTempStore();
+  const kp = store.upsertKnowledgePoint(sampleCandidate, sampleAnchor);
+  for (let i = 0; i < 12; i++) {
+    store.rateKnowledgePoint(kp.id, "good", `question ${i}`);
+  }
+  const updated = store.getKnowledgePoint(kp.id);
+  assert.equal(updated?.recentAsks.length, 8);
+  assert.equal(updated?.recentAsks[7].question, "question 11");
+});
+
 test("resetAll wipes config, stats, profile, review queue and persists it", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "quizme-test-"));
   const filePath = path.join(dir, "quizme.json");
@@ -192,6 +273,7 @@ test("resetAll wipes config, stats, profile, review queue and persists it", () =
   store.updateSignal("react", true);
   store.upsertReviewItem(sampleQuestion, false);
   store.saveQuestion(sampleQuestion);
+  store.upsertKnowledgePoint(sampleCandidate, sampleAnchor);
 
   assert.equal(store.getConfig<{ level: string } | null>("user")?.level, "senior");
   assert.equal(store.getStats().attemptsTotal, 1);
@@ -208,6 +290,7 @@ test("resetAll wipes config, stats, profile, review queue and persists it", () =
   assert.equal(store.getProfileSignals().length, 0);
   assert.equal(store.listReviewQuestions().length, 0);
   assert.equal(store.listRecentQuestions().length, 0);
+  assert.equal(store.listKnowledgePoints().length, 0);
 
   // ...and the empty state survives a reload from disk.
   const reloaded = new JsonStore(filePath);
