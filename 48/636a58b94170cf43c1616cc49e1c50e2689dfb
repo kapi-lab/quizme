@@ -1,0 +1,23 @@
+src/providers/claudeAgent.ts
+  s_18a674a6907383::t_1576386d28adec 236
+AGENTS.md
+  s_18a674a6907383::t_3b032a3b0a10dc 55
+docs/direct-api-provider.md
+  s_18a674a6907383::t_fb555e89675fe6 97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "48636a58b94170cf43c1616cc49e1c50e2689dfb",
+  "prompts": {},
+  "sessions": {
+    "s_18a674a6907383": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3460c66-ff2c-4bc5-8c97-7868d8f8cc31",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
