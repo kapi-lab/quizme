@@ -22,7 +22,6 @@ const validQuestion = {
     D: "useRef holds a mutable ref, not a callback."
   },
   tags: ["react", "hooks"],
-  followUps: ["reconciliation"]
 };
 
 test("accepts a well-formed question batch", () => {

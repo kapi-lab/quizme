@@ -85,7 +85,6 @@ const DEMO_CARDS: Record<string, DemoCardContent> = {
       D: "rebase 可以在任何分支上执行，没有这种限制。"
     },
     tags: ["git", "collaboration"],
-    followUps: ["rebase 之后如何安全地推送？", "revert 和 reset 有什么区别？"],
     takeaway: "改写已共享的提交历史 = 改写别人正在依赖的事实。"
   },
   "http-cache-revalidation": {
@@ -108,7 +107,6 @@ const DEMO_CARDS: Record<string, DemoCardContent> = {
       D: "规范没有这种强制，是否重验证由缓存策略（Cache-Control）决定。"
     },
     tags: ["http", "caching"],
-    followUps: ["ETag 和 Last-Modified 哪个优先？", "Cache-Control: no-cache 和 no-store 的区别？"],
     takeaway: "过期不等于失效——重验证让缓存以一次轻量往返换掉整个响应体的重传。"
   },
   "react-usecallback-vs-usememo": {
@@ -131,7 +129,6 @@ const DEMO_CARDS: Record<string, DemoCardContent> = {
       D: "不存在编译成静态代码的机制，React 的跳过渲染靠的是 memo 的 props 比较。"
     },
     tags: ["react", "hooks", "performance"],
-    followUps: ["React.memo 的浅比较是怎么工作的？", "什么时候不值得用 useCallback？"],
     takeaway: "useCallback 稳定的是函数引用，它必须和 React.memo 配对才产生优化。"
   },
   "node-event-loop-microtasks": {
@@ -154,7 +151,6 @@ const DEMO_CARDS: Record<string, DemoCardContent> = {
       D: "该顺序由 HTML/ECMAScript 规范明确定义，所有合规运行时行为一致。"
     },
     tags: ["javascript", "event-loop", "node"],
-    followUps: ["queueMicrotask 和 process.nextTick 的区别？", "微任务饿死宏任务会发生什么？"],
     takeaway: "微任务在当前宏任务结束后立即清空——理解这一点是排查异步时序问题的钥匙。"
   },
   "sql-index-selectivity": {
@@ -177,7 +173,6 @@ const DEMO_CARDS: Record<string, DemoCardContent> = {
       D: "是否用索引与锁表无关，这是纯粹的执行代价权衡。"
     },
     tags: ["database", "sql", "indexing"],
-    followUps: ["复合索引的最左前缀原则是什么？", "什么是覆盖索引？"],
     takeaway: "索引值不值得建看选择性——低区分度的列建索引常常是白建。"
   }
 };
@@ -204,7 +199,6 @@ function fallbackCard(item: RoundPlanItem): DemoCardContent {
       D: "演示占位选项。"
     },
     tags: kp.domain.length ? kp.domain : ["demo"],
-    followUps: [],
     takeaway: kp.essence
   };
 }

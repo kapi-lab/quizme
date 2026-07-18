@@ -96,7 +96,6 @@ export interface QuizQuestion {
   explanation: string;
   whyWrong: Record<string, string>;
   tags: string[];
-  followUps: string[];
   /** Card fields (learning-card rounds). Absent on legacy/override questions. */
   kpId?: string;
   origin?: CardOrigin;

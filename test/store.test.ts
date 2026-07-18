@@ -29,7 +29,6 @@ const sampleQuestion: QuizQuestion = {
   explanation: "useCallback returns a memoized callback.",
   whyWrong: { A: "useEffect runs side effects.", C: "useMemo memoizes a value.", D: "useRef holds a ref." },
   tags: ["react", "hooks"],
-  followUps: ["reconciliation"]
 };
 
 test("config round-trips through JSON", () => {
