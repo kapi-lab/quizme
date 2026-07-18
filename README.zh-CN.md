@@ -63,8 +63,6 @@ claude --version   # 能输出版本号即可
 
 未安装可运行 `npm install -g @anthropic-ai/claude-code`，或参考 [Claude Code 文档](https://docs.anthropic.com/claude-code)。
 
-> 无 `claude` 时仍可离线体验：`QUIZME_PROVIDER=local`。
-
 ## 使用方式
 
 ```bash
@@ -108,7 +106,6 @@ quizme "React rendering and caching"
 - 默认模式会从 `~/.claude/projects` 读取当前仓库最近的 Claude Code transcript。统计、档案、设置、复习等功能通过交互式主界面进入。
 - 本地数据为平台 app data 目录下的单个 `quizme.json` 文件，采用原子写入（temp 文件 + rename）。你正在作答的这批题目存于内存，但下一批会在后台预生成并把缓存落盘，因此未答完的批次可跨重启复用，只有冷启动才会看到加载界面。
 - 题目生成和 `why` 模式会调用本地 `claude` CLI 的 print mode（`--safe-mode` + `--tools ""`，禁用 agent tool；上下文已写入 prompt）。
-- 离线 provider（`QUIZME_PROVIDER=local`、`QUIZME_PROVIDER_FALLBACK=local`）为**暂未实现**的能力，当前不可用。
 
 ## 许可证
 

@@ -63,8 +63,6 @@ claude --version   # should print a version number
 
 If not installed, run `npm install -g @anthropic-ai/claude-code`, or see the [Claude Code docs](https://docs.anthropic.com/claude-code).
 
-> No `claude` available? You can still try it offline: `QUIZME_PROVIDER=local`.
-
 ## Usage
 
 ```bash
@@ -108,7 +106,6 @@ The Settings page also has two actions: **Export debug file** writes a self-cont
 - Default mode reads the most recent Claude Code transcript for the current repo from `~/.claude/projects`. Stats, archive, settings, and review features are accessible from the interactive main menu.
 - Local data is a single `quizme.json` file in the platform app-data directory, written atomically (temp file + rename). The batch you are currently answering lives in memory, but the next batch is pre-generated in the background and its cache is persisted, so an unplayed batch survives restarts and only a cold start ever hits the loading screen.
 - Question generation and `why` mode invoke the local `claude` CLI in print mode (`--safe-mode` + `--tools ""`, agent tools disabled; context is written into the prompt).
-- The offline provider (`QUIZME_PROVIDER=local`, `QUIZME_PROVIDER_FALLBACK=local`) is **not yet implemented** and currently unavailable.
 
 ## License
 

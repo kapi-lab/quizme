@@ -233,10 +233,7 @@ function ensureClaudeAvailable(): void {
         "",
         "If it is installed but not on this process's PATH, set",
         "  QUIZME_CLAUDE_BIN=/absolute/path/to/claude",
-        "(also checked: " + CLAUDE_BIN_CANDIDATES.join(", ") + ")",
-        "",
-        "Note: an offline local provider (QUIZME_PROVIDER=local) is documented",
-        "but not yet implemented — the CLI still requires `claude`."
+        "(also checked: " + CLAUDE_BIN_CANDIDATES.join(", ") + ")"
       ].join("\n")
     );
   }

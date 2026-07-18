@@ -94,7 +94,7 @@ interface UserConfig {
 
 ## Provider 抽象
 
-复用现有的 `QUIZME_PROVIDER` 钩子（`AGENTS.md` 已提及 `local` 桩），并让设置项与之对齐：
+新增一层由 `modelBackend` 配置驱动的后端选择（不依赖任何 `QUIZME_PROVIDER` 环境变量）：
 
 - 在 `generateQuestions` / `generateWhy` 之上做后端选择：
   - `modelBackend === "api"` 且能取得 API Key → 走 **API provider**；

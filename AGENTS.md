@@ -52,8 +52,7 @@ docs/         product.md, technical.md (Chinese product/design docs)
 - **Config normalization**: `src/cli/config.ts` `normalizeConfig` fills defaults — `claudeModel` defaults to `"haiku"`, `claudeEffort` to `"low"`, `language` to `"en"`, `level` to `"mid"`, `dailyGoal` to `5`. When adding a config field, update both `normalizeConfig` and the `UserConfig` type in `types.ts`.
 - **Question schema is enforced**: `generation/schema.ts` (`QUESTION_SCHEMA`) + `generation/validator.ts` validate model output; `generation/dedupe.ts` drops duplicates within a round. Bad model output is rejected, not silently kept.
 - **`why` mode is configured separately** from generation (`QUIZME_CLAUDE_WHY_MODEL` / `QUIZME_CLAUDE_WHY_EFFORT`), defaulting to the account model. Preserve that separation.
-- **Offline provider (`QUIZME_PROVIDER=local`) is a stub** — referenced but not implemented. Treat any code path depending on it as non-functional; don't wire features against it yet.
-- **Env vars** (`QUIZME_DATA_DIR`, `QUIZME_CLAUDE_BIN`, `QUIZME_CLAUDE_WHY_MODEL`, `QUIZME_CLAUDE_WHY_EFFORT`, `QUIZME_PROVIDER`) all take effect at call time — no restart needed beyond the running process.
+- **Env vars** (`QUIZME_DATA_DIR`, `QUIZME_CLAUDE_BIN`, `QUIZME_CLAUDE_WHY_MODEL`, `QUIZME_CLAUDE_WHY_EFFORT`) all take effect at call time — no restart needed beyond the running process.
 - **No `Date.now()` / `Math.random()` assumption in workflow scripts**: not relevant to the app itself, but if you author a Workflow orchestration script for this repo, those are unavailable in the script sandbox.
 
 ## Code style
