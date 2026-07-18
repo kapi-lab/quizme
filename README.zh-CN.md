@@ -98,15 +98,16 @@ quizme "React rendering and caching"
 | `QUIZME_DATA_DIR` | 覆盖本地数据存储目录；不设时使用平台 app data 目录，受限环境 fallback 到 `./.quizme` |
 | `QUIZME_CLAUDE_WHY_MODEL` | `why` 模式（答错后深度讲解）使用的模型别名；不设则走账号默认模型 |
 | `QUIZME_CLAUDE_WHY_EFFORT` | `why` 模式的 effort 等级（`low`/`medium`/`high`/`xhigh`/`max`）；不设则走默认 |
+| `QUIZME_PROVIDER` | 设为 `local` 启用离线演示模式：使用内置示例题库，不调用 `claude`，可完整体验答题卡与复习调度流程 |
 
 > `why` 模式刻意与题目生成分开配置：讲解对模型质量更敏感，默认保持账号模型；仅当想全局降级/提速时才设这两个变量。
 
 ## 说明
 
 - 默认模式会从 `~/.claude/projects` 读取当前仓库最近的 Claude Code transcript。统计、档案、设置、复习等功能通过交互式主界面进入。
-- 本地数据为平台 app data 目录下的单个 `quizme.json` 文件，采用原子写入（temp 文件 + rename），当前轮次的题库仅存于内存、不落盘。
+- 本地数据为平台 app data 目录下的单个 `quizme.json` 文件，采用原子写入（temp 文件 + rename），包含配置、统计、画像与知识点账本（含间隔重复调度状态）；当前轮次的卡片仅存于内存、不落盘。
 - 题目生成和 `why` 模式会调用本地 `claude` CLI 的 print mode（`--bare` + `--tools ""`，禁用 agent tool；上下文已写入 prompt）。
-- 离线 provider（`QUIZME_PROVIDER=local`、`QUIZME_PROVIDER_FALLBACK=local`）为**暂未实现**的能力，当前不可用。
+- 离线演示模式（`QUIZME_PROVIDER=local`）使用内置示例题库，不依赖 `claude`，适合快速体验；题目内容固定，复习变式与 `why` 深挖仍需真实模型。
 
 ## 许可证
 

@@ -28,15 +28,19 @@ Pre-publish gate (`prepublishOnly`) runs `typecheck && test && build`, so all th
 src/
   cli/        argv parsing, first-run config bootstrap, quiz session orchestration
   sources/    produce a SourceSummary from: claude_session | repo | topic
-  generation/ build prompts, schema, validator, dedupe — turns a SourceSummary
-              into a prompt for the claude CLI and validates the JSON it returns
-              prompts/quiz.ts (question generation), prompts/why.ts (deep explanation)
+  generation/ two-stage learning-card pipeline:
+              prompts/extract.ts (Stage A: knowledge-point extraction),
+              prompts/cards.ts (Stage B: card rendering), compose.ts (round
+              composition: due reviews + new picks, local policy), round.ts
+              (orchestrator), schema/validator/dedupe; prompts/quiz.ts is the
+              legacy single-stage path, prompts/why.ts the deep explanation
   providers/  claudeAgent.ts — spawns `claude` CLI in print mode, parses its NDJSON
-              event stream, extracts questions
+              event stream; localDemo.ts — offline demo provider (QUIZME_PROVIDER=local)
   storage/    JsonStore — single quizme.json, atomic writes (temp+rename)
               index.ts computes the app-data dir + ./.quizme fallback
+  srs.ts      SM-2 variant scheduler (pure functions): rateSrs, nextDepth
   ui/         Ink + React TUI: renderApp, App, screens/, components/, theme, sound
-  types.ts    shared types (Store, UserConfig, QuizQuestion, Stats, ...)
+  types.ts    shared types (Store, UserConfig, QuizQuestion, KnowledgePoint, ...)
   version.ts  reads version from package.json at runtime
 test/         node:test unit suites
 docs/         product.md, technical.md (Chinese product/design docs)
@@ -47,11 +51,12 @@ docs/         product.md, technical.md (Chinese product/design docs)
 - **Runtime**: Node ≥ 20, ESM (`"type": "module"`), TypeScript strict. Source runs via `tsx`; published package ships only `dist/`.
 - **Claude CLI is the model backend**: generation + `why` mode spawn the local `claude` executable in print mode (`--bare`, `--tools ""` — agent tools disabled, context is embedded in the prompt). Never assume API keys or `@anthropic-ai/sdk`.
 - **`claude` binary resolution**: resolved from `PATH`; override with `QUIZME_CLAUDE_BIN` (absolute path). If you touch provider code, preserve this fallback.
-- **Data layer is JSON, not SQLite**: all persisted state (config, aggregate stats, profile signals, the pending review queue) lives in a single `quizme.json` written atomically via temp-file + rename. The current round's question bank is in-memory only and never persisted. (`App-Data dir` from `getAppDataDir()`; `QUIZME_DATA_DIR` overrides; `./.quizme` is the last-resort fallback.)
+- **Data layer is JSON, not SQLite**: all persisted state (config, aggregate stats, profile signals, the pending review queue, and the knowledge-point ledger with its SRS scheduling state) lives in a single `quizme.json` written atomically via temp-file + rename. The current round's card bank is in-memory only and never persisted. (`App-Data dir` from `getAppDataDir()`; `QUIZME_DATA_DIR` overrides; `./.quizme` is the last-resort fallback.)
+- **Knowledge points are the learning unit**: cards are ephemeral renderings of a persistent `KnowledgePoint` (see `docs/design-learning-cards.md`). Reviews re-render a due KP as a fresh question (past stems in `recentAsks` are passed to the model to force a new angle) — never replay a stored question verbatim.
 - **Config normalization**: `src/cli/config.ts` `normalizeConfig` fills defaults — `claudeModel` defaults to `"haiku"`, `claudeEffort` to `"low"`, `language` to `"en"`, `level` to `"mid"`, `dailyGoal` to `5`. When adding a config field, update both `normalizeConfig` and the `UserConfig` type in `types.ts`.
 - **Question schema is enforced**: `generation/schema.ts` (`QUESTION_SCHEMA`) + `generation/validator.ts` validate model output; `generation/dedupe.ts` drops duplicates within a round. Bad model output is rejected, not silently kept.
 - **`why` mode is configured separately** from generation (`QUIZME_CLAUDE_WHY_MODEL` / `QUIZME_CLAUDE_WHY_EFFORT`), defaulting to the account model. Preserve that separation.
-- **Offline provider (`QUIZME_PROVIDER=local`) is a stub** — referenced but not implemented. Treat any code path depending on it as non-functional; don't wire features against it yet.
+- **Offline provider (`QUIZME_PROVIDER=local`) is a demo mode** — implemented in `providers/localDemo.ts` with canned knowledge points and cards so the full card/review flow runs without `claude`. It is for demos and UI development, not a real generation backend; card content is static.
 - **Env vars** (`QUIZME_DATA_DIR`, `QUIZME_CLAUDE_BIN`, `QUIZME_CLAUDE_WHY_MODEL`, `QUIZME_CLAUDE_WHY_EFFORT`, `QUIZME_PROVIDER`) all take effect at call time — no restart needed beyond the running process.
 - **No `Date.now()` / `Math.random()` assumption in workflow scripts**: not relevant to the app itself, but if you author a Workflow orchestration script for this repo, those are unavailable in the script sandbox.
 

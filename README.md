@@ -98,15 +98,16 @@ On first run you'll be guided to choose a language and level; from the in-app **
 | `QUIZME_DATA_DIR` | Override the local data directory; defaults to the platform app-data dir, falling back to `./.quizme` in restricted environments |
 | `QUIZME_CLAUDE_WHY_MODEL` | Model alias used by `why` mode (deep explanation after a wrong answer); falls back to the account default |
 | `QUIZME_CLAUDE_WHY_EFFORT` | Effort level for `why` mode (`low`/`medium`/`high`/`xhigh`/`max`); falls back to the default |
+| `QUIZME_PROVIDER` | Set to `local` for the offline demo mode: canned sample cards, no `claude` calls — a full tour of the card flow and review scheduling |
 
 > `why` mode is deliberately configured separately from question generation: explanations are more sensitive to model quality, so it keeps the account model by default; set these variables only when you want to globally downgrade or speed it up.
 
 ## Notes
 
 - Default mode reads the most recent Claude Code transcript for the current repo from `~/.claude/projects`. Stats, archive, settings, and review features are accessible from the interactive main menu.
-- Local data is a single `quizme.json` file in the platform app-data directory, written atomically (temp file + rename). The current round's question bank lives in memory only and is never persisted.
+- Local data is a single `quizme.json` file in the platform app-data directory, written atomically (temp file + rename). It holds config, stats, profile, and the knowledge-point ledger (with spaced-repetition state); the current round's cards live in memory only and are never persisted.
 - Question generation and `why` mode invoke the local `claude` CLI in print mode (`--bare` + `--tools ""`, agent tools disabled; context is written into the prompt).
-- The offline provider (`QUIZME_PROVIDER=local`, `QUIZME_PROVIDER_FALLBACK=local`) is **not yet implemented** and currently unavailable.
+- The offline demo mode (`QUIZME_PROVIDER=local`) serves canned sample cards without touching `claude` — good for a quick tour; card content is static, and review variation plus `why` deep-dives still need the real model.
 
 ## License
 
