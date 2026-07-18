@@ -1,12 +1,16 @@
 /**
  * Claude Code dark theme tokens (fs5 preset).
  * Values extracted from Claude Code's built-in theme definitions.
+ *
+ * `text` is intentionally undefined: body text must follow the terminal's own
+ * foreground color so it stays readable on both dark and light backgrounds.
+ * Forcing #FFFFFF made questions and choices invisible on light terminals.
  */
 export const theme = {
   claude: "#D77757",
   clawdBody: "#D77757",
   clawdBackground: "#000000",
-  text: "#FFFFFF",
+  text: undefined,
   inverseText: "#000000",
   inactive: "#999999",
   subtle: "#505050",
