@@ -1,4 +1,4 @@
-import type { Choice, QuestionSourceMode, QuizQuestion } from "../types.js";
+import type { Choice, KpCandidate, KpDepth, QuestionSourceMode, QuizQuestion } from "../types.js";
 
 const VALID_CHOICE_IDS: ReadonlyArray<string> = ["A", "B", "C", "D"];
 const VALID_SOURCE_MODES: ReadonlyArray<QuestionSourceMode> = [
@@ -112,6 +112,9 @@ function validateOne(raw: unknown, index: number, issues: string[]): QuizQuestio
     return null;
   }
 
+  const optionalStr = (value: unknown): string | undefined =>
+    typeof value === "string" && value.trim() ? value.trim() : undefined;
+
   return {
     id: (raw.id as string).trim(),
     sourceMode: sourceMode as QuestionSourceMode,
@@ -123,8 +126,47 @@ function validateOne(raw: unknown, index: number, issues: string[]): QuizQuestio
     explanation: (raw.explanation as string).trim(),
     whyWrong: whyWrong as Record<string, string>,
     tags: (tags as string[]).map((t) => t.trim()),
-    followUps: (followUps as string[]).map((t) => t.trim())
+    followUps: (followUps as string[]).map((t) => t.trim()),
+    // Card fields — present on learning-card rounds, absent on legacy batches.
+    kpId: optionalStr(raw.kpId),
+    anchor: optionalStr(raw.anchor),
+    takeaway: optionalStr(raw.takeaway)
   };
+}
+
+/**
+ * Validate the extraction-stage payload. Invalid candidates are dropped, not
+ * fatal — extraction quality varies and the round can proceed with fewer.
+ */
+export function validateKpCandidates(payload: unknown): KpCandidate[] {
+  if (!isRecord(payload) || !Array.isArray(payload.knowledgePoints)) {
+    return [];
+  }
+  const out: KpCandidate[] = [];
+  for (const raw of payload.knowledgePoints) {
+    if (!isRecord(raw)) continue;
+    if (typeof raw.name !== "string" || !raw.name.trim()) continue;
+    if (typeof raw.essence !== "string" || !raw.essence.trim()) continue;
+    const domain = Array.isArray(raw.domain)
+      ? raw.domain.filter((d): d is string => typeof d === "string" && !!d.trim())
+      : [];
+    if (!domain.length) continue;
+    const depthNum = Number(raw.suggestedDepth);
+    const suggestedDepth: KpDepth = depthNum >= 3 ? 3 : depthNum >= 2 ? 2 : 1;
+    const relevanceNum = Number(raw.relevance);
+    const relevance = Number.isFinite(relevanceNum)
+      ? Math.min(1, Math.max(0, relevanceNum))
+      : 0.5;
+    out.push({
+      name: raw.name.trim(),
+      essence: raw.essence.trim(),
+      domain: domain.map((d) => d.trim()),
+      suggestedDepth,
+      relevance,
+      anchor: typeof raw.anchor === "string" ? raw.anchor.trim() : ""
+    });
+  }
+  return out;
 }
 
 export function validateQuestions(payload: unknown): QuizQuestion[] {

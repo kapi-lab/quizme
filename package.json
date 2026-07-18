@@ -13,7 +13,7 @@
   "scripts": {
     "start": "node --import tsx ./src/cli/index.ts",
     "build": "tsc -p tsconfig.build.json",
-    "test": "node --import tsx --test test/paths.test.ts test/validator.test.ts test/store.test.ts",
+    "test": "node --import tsx --test test/paths.test.ts test/validator.test.ts test/store.test.ts test/srs.test.ts test/compose.test.ts",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
