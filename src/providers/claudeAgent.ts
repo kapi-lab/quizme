@@ -3,13 +3,19 @@ import crypto from "node:crypto";
 import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { QUESTION_SCHEMA } from "../generation/schema.js";
+import { EXTRACT_SCHEMA, QUESTION_SCHEMA, buildCardsSchema } from "../generation/schema.js";
+import { buildCardsPrompt } from "../generation/prompts/cards.js";
+import { buildExtractPrompt } from "../generation/prompts/extract.js";
 import { buildQuizPrompt } from "../generation/prompts/quiz.js";
 import { buildWhyPrompt } from "../generation/prompts/why.js";
-import { validateQuestions } from "../generation/validator.js";
+import { validateKpCandidates, validateQuestions } from "../generation/validator.js";
+import { demoWhyAnswer, isLocalProvider } from "./localDemo.js";
 import { recordInteraction } from "../debug/interactionLog.js";
+import type { InteractionKind } from "../debug/interactionLog.js";
+import type { RoundPlanItem } from "../generation/compose.js";
 import type {
   ClaudeEffort,
+  KpCandidate,
   ProfileSignal,
   QuizMode,
   QuizQuestion,
@@ -64,14 +70,14 @@ function getAssistantBlocks(event: ClaudeAssistantEvent): AssistantBlock[] {
   return Array.isArray(content) ? (content as AssistantBlock[]) : [];
 }
 
-function extractQuestionsPayload(value: unknown): { questions?: unknown[] } | null {
+function extractKeyedPayload(value: unknown, key: string): JsonRecord | null {
   if (!isObject(value)) {
     return null;
   }
-  if (!("questions" in value)) {
+  if (!(key in value)) {
     return null;
   }
-  return Array.isArray(value.questions) ? (value as { questions?: unknown[] }) : null;
+  return Array.isArray(value[key]) ? value : null;
 }
 
 /**
@@ -316,13 +322,13 @@ async function runClaude(
   });
 }
 
-function parseQuestionsFromEvents(events: ClaudeEvent[]): { questions?: unknown[] } | null {
+function parsePayloadFromEvents(events: ClaudeEvent[], key: string): JsonRecord | null {
   for (const event of events) {
     if (isAssistantEvent(event)) {
       for (const block of getAssistantBlocks(event)) {
         // StructuredOutput tool_use contains the JSON schema result
         if (isObject(block) && block.type === "tool_use" && block.name === "StructuredOutput" && block.input) {
-          const payload = extractQuestionsPayload(block.input);
+          const payload = extractKeyedPayload(block.input, key);
           if (payload) {
             return payload;
           }
@@ -331,7 +337,7 @@ function parseQuestionsFromEvents(events: ClaudeEvent[]): { questions?: unknown[
         if (isObject(block) && block.type === "text" && typeof block.text === "string") {
           try {
             const parsed = JSON.parse(block.text);
-            const payload = extractQuestionsPayload(parsed);
+            const payload = extractKeyedPayload(parsed, key);
             if (payload) return payload;
           } catch {
             // not JSON
@@ -343,7 +349,7 @@ function parseQuestionsFromEvents(events: ClaudeEvent[]): { questions?: unknown[
     if (isResultEvent(event) && event.result) {
       try {
         const parsed = JSON.parse(event.result);
-        const payload = extractQuestionsPayload(parsed);
+        const payload = extractKeyedPayload(parsed, key);
         if (payload) return payload;
       } catch {
         // not JSON
@@ -351,6 +357,55 @@ function parseQuestionsFromEvents(events: ClaudeEvent[]): { questions?: unknown[
     }
   }
   return null;
+}
+
+/**
+ * Run a print-mode claude call with a JSON schema and return the payload
+ * object whose `key` property is an array. Shared by all structured stages
+ * (extraction, card generation).
+ */
+async function runStructured({
+  schema,
+  prompt,
+  key,
+  kind,
+  model,
+  effort,
+  timeout,
+  onProgress
+}: {
+  schema: unknown;
+  prompt: string;
+  key: string;
+  kind: InteractionKind;
+  model?: string;
+  effort?: ClaudeEffort;
+  timeout: number;
+  onProgress?: (chunk: string) => void;
+}): Promise<JsonRecord | null> {
+  ensureClaudeAvailable();
+  const events: ClaudeEvent[] = [];
+  const rawOutput = await runClaude(
+    [
+      ...buildModelArgs(model, effort),
+      "-p",
+      "--output-format", "stream-json",
+      "--verbose",
+      "--json-schema", JSON.stringify(schema),
+      prompt
+    ],
+    {
+      timeout,
+      onEvent: (event) => {
+        events.push(event);
+        if (onProgress && isAssistantEvent(event)) {
+          onProgress(".");
+        }
+      }
+    }
+  );
+  recordInteraction({ kind, model, effort, prompt, rawOutput });
+  return parsePayloadFromEvents(events, key);
 }
 
 function extractTextFromEvents(events: ClaudeEvent[]): string {
@@ -385,39 +440,17 @@ export async function generateQuestions({
   signals?: ProfileSignal[];
   onProgress?: (chunk: string) => void;
 }): Promise<QuizQuestion[]> {
-  ensureClaudeAvailable();
   const prompt = buildQuizPrompt({ source, config, recentQuestions, mode, signals });
-  const events: ClaudeEvent[] = [];
-
-  const rawOutput = await runClaude(
-    [
-      ...buildModelArgs(config.claudeModel, config.claudeEffort),
-      "-p",
-      "--output-format", "stream-json",
-      "--verbose",
-      "--json-schema", JSON.stringify(QUESTION_SCHEMA),
-      prompt
-    ],
-    {
-      timeout: 300000,
-      onEvent: (event) => {
-        events.push(event);
-        if (onProgress && isAssistantEvent(event)) {
-          onProgress(".");
-        }
-      }
-    }
-  );
-
-  recordInteraction({
+  const parsed = await runStructured({
+    schema: QUESTION_SCHEMA,
+    prompt,
+    key: "questions",
     kind: "quiz",
     model: config.claudeModel,
     effort: config.claudeEffort,
-    prompt,
-    rawOutput
+    timeout: 300000,
+    onProgress
   });
-
-  const parsed = parseQuestionsFromEvents(events);
   if (!parsed) {
     throw new Error("Claude returned no questions. Try again or use a different source.");
   }
@@ -428,6 +461,84 @@ export async function generateQuestions({
     ...q,
     id: q.id || `q_${crypto.createHash("sha1").update(`${source.title}:${q.question}:${index}`).digest("hex").slice(0, 10)}`
   }));
+}
+
+/**
+ * Stage B: render one MCQ card per round-plan item. Cards are joined back to
+ * their knowledge points via the echoed kpId (falling back to plan order),
+ * and origin/depth are stamped from the plan — the model is not trusted for
+ * either.
+ */
+export async function generateCards({
+  plan,
+  source,
+  config,
+  onProgress
+}: {
+  plan: RoundPlanItem[];
+  source: SourceSummary;
+  config: UserConfig;
+  onProgress?: (chunk: string) => void;
+}): Promise<QuizQuestion[]> {
+  const prompt = buildCardsPrompt({ plan, source, config });
+  const parsed = await runStructured({
+    schema: buildCardsSchema(plan.length),
+    prompt,
+    key: "questions",
+    kind: "cards",
+    model: config.claudeModel,
+    effort: config.claudeEffort,
+    timeout: 300000,
+    onProgress
+  });
+  if (!parsed) {
+    throw new Error("Claude returned no cards. Try again or use a different source.");
+  }
+
+  const cards = validateQuestions(parsed);
+  const byKpId = new Map(plan.map((item) => [item.kp.id, item]));
+
+  return cards.map((card, index) => {
+    const item = (card.kpId && byKpId.get(card.kpId)) || plan[index];
+    return {
+      ...card,
+      id: card.id || `q_${crypto.createHash("sha1").update(`${item.kp.id}:${card.question}:${index}`).digest("hex").slice(0, 10)}`,
+      kpId: item.kp.id,
+      origin: item.origin,
+      depth: item.depth,
+      takeaway: card.takeaway || item.kp.essence
+    };
+  });
+}
+
+/**
+ * Stage A: extract transferable knowledge-point candidates from a source
+ * context. Invalid candidates are dropped; an empty result is returned as-is
+ * so the caller can decide whether the round can proceed (e.g. review-only).
+ */
+export async function extractKnowledgePoints({
+  source,
+  config,
+  existingKpNames,
+  onProgress
+}: {
+  source: SourceSummary;
+  config: UserConfig;
+  existingKpNames: string[];
+  onProgress?: (chunk: string) => void;
+}): Promise<KpCandidate[]> {
+  const prompt = buildExtractPrompt({ source, config, existingKpNames });
+  const parsed = await runStructured({
+    schema: EXTRACT_SCHEMA,
+    prompt,
+    key: "knowledgePoints",
+    kind: "extract",
+    model: config.claudeModel,
+    effort: config.claudeEffort,
+    timeout: 180000,
+    onProgress
+  });
+  return parsed ? validateKpCandidates(parsed) : [];
 }
 
 export async function generateWhy({
@@ -443,6 +554,9 @@ export async function generateWhy({
   userAnswer: string;
   onProgress?: (chunk: string) => void;
 }): Promise<string> {
+  if (isLocalProvider()) {
+    return demoWhyAnswer(asked);
+  }
   ensureClaudeAvailable();
   const prompt = buildWhyPrompt({ question, config, asked, userAnswer });
   const events: ClaudeEvent[] = [];

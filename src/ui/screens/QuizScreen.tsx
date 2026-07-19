@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { dedupeQuestions } from "../../generation/dedupe.js";
-import { cacheSignature, prefetchInFlight } from "../../generation/prefetch.js";
-import { generateQuestions, generateWhy } from "../../providers/claudeAgent.js";
+import { prepareRound } from "../../generation/round.js";
+import { generateWhy } from "../../providers/claudeAgent.js";
 import { AppHeader } from "../components/AppHeader.js";
 import { SelectList } from "../components/SelectList.js";
 import { Spinner } from "../components/Spinner.js";
@@ -14,6 +14,7 @@ import type {
   AnswerResult,
   QuizMode,
   QuizQuestion,
+  Rating,
   SoundPlayer,
   SourceSummary,
   Store,
@@ -22,8 +23,19 @@ import type {
   WhyTurn
 } from "../../types.js";
 
-type Phase = "generating" | "question" | "result" | "why" | "error";
+type Phase = "generating" | "question" | "result" | "why" | "summary" | "error";
 type Overlay = "stats" | "profile" | null;
+
+/** Per-card outcome collected for the end-of-round summary. */
+interface CardOutcome {
+  origin: QuizQuestion["origin"];
+  kpName: string | null;
+  correct: boolean;
+  skipped: boolean;
+  /** Interval after rating, in days — null when the card has no KP. */
+  intervalDays: number | null;
+  lapsed: boolean;
+}
 
 export function QuizScreen({
   store,
@@ -68,6 +80,7 @@ export function QuizScreen({
   const [whyStreaming, setWhyStreaming] = useState("");
   const [whyLoading, setWhyLoading] = useState(false);
   const whyTurnsRef = useRef<WhyTurn[]>([]);
+  const outcomesRef = useRef<CardOutcome[]>([]);
   const startedAtRef = useRef(Date.now());
   const soundRef = useRef(sound);
   soundRef.current = sound;
@@ -80,14 +93,8 @@ export function QuizScreen({
   const total = questions.length;
 
   const resultActions = isZh
-    ? [
-        { id: "next", label: "下一题 (Next)" },
-        { id: "why", label: "深入了解 (Why)" }
-      ]
-    : [
-        { id: "next", label: "Next" },
-        { id: "why", label: "Why (deeper)" }
-      ];
+    ? [{ id: "next", label: "下一题 (Next)" }]
+    : [{ id: "next", label: "Next" }];
 
   useEffect(() => {
     let cancelled = false;
@@ -104,34 +111,17 @@ export function QuizScreen({
         if (questionsOverride) {
           loaded = dedupeQuestions(questionsOverride, recentQuestions).slice(0, 5);
         } else {
-          const signals = store.getProfileSignals();
-          const signature = cacheSignature(config, mode);
-          const generate = () =>
-            generateQuestions({ source, config, recentQuestions, mode, signals, onProgress: () => {} });
-
-          // Prefer a background-prefetched batch (instant). If a prefetch is
-          // still mid-flight, await it rather than spawning a second call.
-          let generated = store.takeQuestionCache(signature);
-          if (!generated) {
-            const pending = prefetchInFlight(signature);
-            if (pending) {
-              setLongLoad(true); // cold start: waiting on the initial prefetch
-              generated = await pending;
-              store.takeQuestionCache(signature); // consume so it isn't reused
-            }
-          }
-          if (!generated || !generated.length) {
-            setLongLoad(true); // no cache at all — generate live
-            generated = await generate();
-          }
-
-          loaded = dedupeQuestions(generated, recentQuestions).slice(0, 5);
-          // A stale cache can dedupe to nothing against recent questions —
-          // regenerate live so the round is never empty.
-          if (!loaded.length) {
-            generated = await generate();
-            loaded = dedupeQuestions(generated, recentQuestions).slice(0, 5);
-          }
+          // Learning-card rounds are time-sensitive (due reviews change daily),
+          // so they are always composed live via prepareRound rather than from
+          // the prefetched legacy-batch cache. Two claude calls — expect a wait.
+          setLongLoad(true);
+          const { cards } = await prepareRound({
+            store,
+            config,
+            source,
+            onProgress: () => {}
+          });
+          loaded = dedupeQuestions(cards, recentQuestions);
         }
 
         if (cancelled) return;
@@ -167,9 +157,9 @@ export function QuizScreen({
     };
   }, [store, config, source, questionsOverride, mode, isZh]);
 
-  function submitAnswer(selected: string) {
+  function submitAnswer(selected: string, skipped = false) {
     if (!question) return;
-    const correct = selected === question.answer;
+    const correct = !skipped && selected === question.answer;
     store.recordAttempt({
       questionId: question.id,
       selected,
@@ -179,7 +169,29 @@ export function QuizScreen({
     });
     question.tags.forEach((tag: string) => store.updateSignal(tag, correct));
     store.upsertReviewItem(question, correct);
-    setAnswerResult({ selected, correct });
+
+    let intervalDays: number | null = null;
+    let lapsed = false;
+    let kpName: string | null = null;
+    if (question.kpId) {
+      const rating: Rating = correct ? "good" : "again";
+      const kp = store.rateKnowledgePoint(question.kpId, rating, question.question);
+      if (kp) {
+        intervalDays = kp.srs.intervalDays;
+        lapsed = rating === "again";
+        kpName = kp.name;
+      }
+    }
+    outcomesRef.current.push({
+      origin: question.origin,
+      kpName,
+      correct,
+      skipped,
+      intervalDays,
+      lapsed
+    });
+
+    setAnswerResult({ selected, correct, skipped });
     setResultActionIndex(0);
     setPhase("result");
     if (correct) {
@@ -244,7 +256,7 @@ export function QuizScreen({
 
     if (questionIndex + 1 >= total) {
       soundRef.current.playComplete();
-      onDone();
+      setPhase("summary");
       return;
     }
 
@@ -271,12 +283,22 @@ export function QuizScreen({
 
     if (phase === "generating") return;
 
+    if (phase === "summary") {
+      if (key.return || input === "q") onDone();
+      return;
+    }
+
     if (phase === "question") {
       if (input === "q" || key.escape) {
         onDone();
         return;
       }
       if (input === "s") {
+        // "Not sure" — reveal the answer and learn; scheduled as a lapse.
+        submitAnswer("?", true);
+        return;
+      }
+      if (input === "t") {
         setOverlay("stats");
         return;
       }
@@ -312,7 +334,7 @@ export function QuizScreen({
     }
 
       if (phase === "result") {
-      if (input === "s") {
+      if (input === "t") {
         setOverlay("stats");
         return;
       }
@@ -397,6 +419,45 @@ export function QuizScreen({
     label: `${c.id}. ${c.text}`
   }));
 
+  const originBadge = question.origin
+    ? question.origin === "review"
+      ? isZh ? `↻ 复习：${question.topic}` : `↻ Review: ${question.topic}`
+      : question.origin === "reinforce"
+        ? isZh ? `⚑ 巩固：${question.topic}` : `⚑ Reinforce: ${question.topic}`
+        : isZh ? `✦ 新知识：${question.topic}` : `✦ New: ${question.topic}`
+    : question.topic;
+
+  const outcomes = outcomesRef.current;
+  const correctCount = outcomes.filter((o) => o.correct).length;
+  const wrongCount = outcomes.filter((o) => !o.correct && !o.skipped).length;
+  const skippedCount = outcomes.filter((o) => o.skipped).length;
+  const newNames = outcomes
+    .filter((o) => (o.origin === "new" || o.origin === "reinforce") && o.kpName)
+    .map((o) => o.kpName as string);
+  const reviewOutcomes = outcomes.filter((o) => o.origin === "review");
+  const extendedCount = reviewOutcomes.filter((o) => !o.lapsed).length;
+  const relapsedCount = reviewOutcomes.filter((o) => o.lapsed).length;
+  const dueTomorrow = store
+    .listDueKnowledgePoints(new Date(Date.now() + 86_400_000))
+    .length;
+  const summaryLines = isZh
+    ? [
+        `本轮 ${outcomes.length} 张 · ${symbols.success}${correctCount} ${symbols.error}${wrongCount}${skippedCount ? ` · 跳过 ${skippedCount}` : ""}`,
+        ...(newNames.length ? [`✦ 新增知识点 ${newNames.length} 个：${newNames.join("、")}`] : []),
+        ...(reviewOutcomes.length
+          ? [`↻ 复习结果：${extendedCount} 个间隔延长、${relapsedCount} 个回炉（明天再见）`]
+          : []),
+        `未来 24 小时内到期 ${dueTomorrow} 个知识点`
+      ]
+    : [
+        `Round of ${outcomes.length} · ${symbols.success}${correctCount} ${symbols.error}${wrongCount}${skippedCount ? ` · skipped ${skippedCount}` : ""}`,
+        ...(newNames.length ? [`✦ New knowledge points (${newNames.length}): ${newNames.join(", ")}`] : []),
+        ...(reviewOutcomes.length
+          ? [`↻ Reviews: ${extendedCount} intervals extended, ${relapsedCount} back to tomorrow`]
+          : []),
+        `${dueTomorrow} knowledge points due within 24h`
+      ];
+
   let statusText = "";
   let hintsText = "";
 
@@ -414,7 +475,8 @@ export function QuizScreen({
       isZh ? "↑↓ 选择" : "↑↓ select",
       isZh ? "Enter 确认" : "enter confirm",
       "A-D/1-4",
-      "s stats",
+      isZh ? "s 不确定" : "s not sure",
+      "t stats",
       "p profile",
       "q exit"
     ]);
@@ -423,9 +485,12 @@ export function QuizScreen({
     hintsText = hintLine([
       isZh ? "↑↓ 选择" : "↑↓ select",
       isZh ? "Enter 确认" : "enter confirm",
-      "s stats",
+      "t stats",
       "p profile"
     ]);
+  } else if (phase === "summary") {
+    statusText = isZh ? "本轮小结" : "Round summary";
+    hintsText = hintLine([isZh ? "Enter 或 q 结束" : "enter or q to finish"]);
   } else if (phase === "why") {
     statusText = isZh ? "Why" : "Why";
     hintsText = hintLine([
@@ -469,11 +534,11 @@ export function QuizScreen({
       ) : phase === "question" ? (
         <Box flexDirection="column">
           <Text bold color={theme.claude}>
-            {question.topic}
+            {originBadge}
           </Text>
           <Box marginTop={1} marginBottom={1}>
-            <Text color={theme.text} wrap="wrap">
-              {question.question}
+            <Text bold color={theme.text} wrap="wrap">
+              {`Q: ${question.question}`}
             </Text>
           </Box>
           <SelectList items={choiceItems} selectedIndex={choiceIndex} />
@@ -486,23 +551,50 @@ export function QuizScreen({
           >
             {answerResult?.correct
               ? isZh ? `${symbols.success} 回答正确` : `${symbols.success} Correct`
-              : isZh
-                ? `${symbols.error} 回答错误 · 正确答案 ${question.answer}`
-                : `${symbols.error} Incorrect · Correct answer ${question.answer}`}
+              : answerResult?.skipped
+                ? isZh
+                  ? `${symbols.pointer} 不确定 · 正确答案 ${question.answer}`
+                  : `${symbols.pointer} Not sure · Correct answer ${question.answer}`
+                : isZh
+                  ? `${symbols.error} 回答错误 · 正确答案 ${question.answer}`
+                  : `${symbols.error} Incorrect · Correct answer ${question.answer}`}
           </Text>
-          <Box marginTop={1} marginBottom={1}>
+          {!answerResult?.correct && !answerResult?.skipped && answerResult && question.whyWrong[answerResult.selected] ? (
+            <Box marginTop={1}>
+              <Text color={theme.text} wrap="wrap">
+                <Text bold>{isZh ? `${answerResult.selected} 为什么不对：` : `Why ${answerResult.selected} is wrong: `}</Text>
+                {question.whyWrong[answerResult.selected]}
+              </Text>
+            </Box>
+          ) : null}
+          <Box marginTop={1} marginBottom={1} flexDirection="column">
+            <Text bold color={theme.text}>
+              {isZh ? "解读" : "Explanation"}
+            </Text>
             <Text color={theme.text} wrap="wrap">
               {question.explanation}
             </Text>
           </Box>
-          {!answerResult?.correct && answerResult && question.whyWrong[answerResult.selected] ? (
+          {question.takeaway ? (
             <Box marginBottom={1}>
-              <Text color={theme.inactive} wrap="wrap">
-                {answerResult.selected}: {question.whyWrong[answerResult.selected]}
+              <Text color={theme.claude} wrap="wrap">
+                {isZh ? `★ 核心结论：${question.takeaway}` : `★ Takeaway: ${question.takeaway}`}
               </Text>
             </Box>
           ) : null}
           <SelectList items={resultActions} selectedIndex={resultActionIndex} />
+        </Box>
+      ) : phase === "summary" ? (
+        <Box flexDirection="column">
+          {summaryLines.map((line, index) => (
+            <Text
+              key={`${line}-${index}`}
+              color={index === 0 ? theme.claude : theme.text}
+              bold={index === 0}
+            >
+              {line}
+            </Text>
+          ))}
         </Box>
       ) : (
         <Box flexDirection="column">

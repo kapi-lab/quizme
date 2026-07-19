@@ -1,16 +1,24 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { initialSrs, nextDepth, rateSrs } from "../srs.js";
 import type {
+  KnowledgePoint,
+  KpAnchor,
+  KpCandidate,
+  KpDepth,
   ProfileSignal,
   QuizQuestion,
+  Rating,
   Stats,
   Store
 } from "../types.js";
 
 /**
  * JSON-backed store. A single `quizme.json` file holds config, aggregate
- * stats, profile signals, and the pending review queue. The current round's
- * question bank lives in memory only — cleared on each new round, never
+ * stats, profile signals, the pending review queue, and the knowledge-point
+ * ledger (the persistent learning units with their SRS state). The current
+ * round's card bank lives in memory only — cleared on each new round, never
  * persisted. Writes go through a temp file + rename so a crash mid-write
  * cannot corrupt the store.
  */
@@ -58,6 +66,7 @@ interface StoreData {
     signals: Record<string, SignalRow>;
   };
   reviewQueue: ReviewEntry[];
+  knowledgePoints: Record<string, KnowledgePoint>;
   questionCache: QuestionCacheEntry | null;
 }
 
@@ -68,6 +77,7 @@ function emptyData(): StoreData {
     stats: { totalAttempts: 0, correctAttempts: 0, whyCount: 0, byDay: {} },
     profile: { signals: {} },
     reviewQueue: [],
+    knowledgePoints: {},
     questionCache: null
   };
 }
@@ -88,6 +98,21 @@ function loadQuestionCache(raw: unknown): QuestionCacheEntry | null {
     createdAt: typeof cache.createdAt === "string" ? cache.createdAt : ""
   };
 }
+
+/** Canonicalize a KP name so extraction-stage variants dedupe to one entry. */
+function normalizeKpName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+function clampDepth(value: unknown): KpDepth {
+  const n = Number(value);
+  if (n >= 3) return 3;
+  if (n >= 2) return 2;
+  return 1;
+}
+
+const KP_PROVENANCE_CAP = 10;
+const KP_RECENT_ASKS_CAP = 8;
 
 function localStr(d: Date): string {
   const y = d.getFullYear();
@@ -178,6 +203,10 @@ export class JsonStore implements Store {
         },
         profile: { signals: parsed.profile?.signals ?? {} },
         reviewQueue: Array.isArray(parsed.reviewQueue) ? parsed.reviewQueue : [],
+        knowledgePoints:
+          parsed.knowledgePoints && typeof parsed.knowledgePoints === "object"
+            ? parsed.knowledgePoints
+            : {},
         questionCache: loadQuestionCache(parsed.questionCache)
       };
     } catch {
@@ -323,6 +352,74 @@ export class JsonStore implements Store {
       .reverse()
       .slice(0, limit)
       .map((r) => r.question);
+  }
+
+  upsertKnowledgePoint(candidate: KpCandidate, anchor: KpAnchor): KnowledgePoint {
+    const name = normalizeKpName(candidate.name);
+    const existing = Object.values(this.data.knowledgePoints).find(
+      (kp) => kp.name === name
+    );
+    if (existing) {
+      existing.provenance = [...existing.provenance, anchor].slice(-KP_PROVENANCE_CAP);
+      if (!existing.essence.trim() && candidate.essence.trim()) {
+        existing.essence = candidate.essence.trim();
+      }
+      this.persist();
+      return existing;
+    }
+
+    const targetDepth = clampDepth(candidate.suggestedDepth);
+    const kp: KnowledgePoint = {
+      id: `kp_${crypto.createHash("sha1").update(name).digest("hex").slice(0, 10)}`,
+      name,
+      essence: candidate.essence.trim(),
+      domain: candidate.domain.map((d) => d.trim()).filter(Boolean),
+      targetDepth,
+      // First exposure tests working knowledge at most; D3 is earned through reviews.
+      currentDepth: Math.min(2, targetDepth) as KpDepth,
+      srs: initialSrs(),
+      provenance: [anchor],
+      recentAsks: [],
+      createdAt: new Date().toISOString()
+    };
+    this.data.knowledgePoints[kp.id] = kp;
+    this.persist();
+    return kp;
+  }
+
+  getKnowledgePoint(id: string): KnowledgePoint | null {
+    return this.data.knowledgePoints[id] ?? null;
+  }
+
+  listKnowledgePoints(): KnowledgePoint[] {
+    return Object.values(this.data.knowledgePoints);
+  }
+
+  listDueKnowledgePoints(now: Date = new Date()): KnowledgePoint[] {
+    const cutoff = now.getTime();
+    return Object.values(this.data.knowledgePoints)
+      .filter(
+        (kp) => kp.srs.lastRating !== null && Date.parse(kp.srs.dueAt) <= cutoff
+      )
+      .sort((a, b) => Date.parse(a.srs.dueAt) - Date.parse(b.srs.dueAt));
+  }
+
+  rateKnowledgePoint(
+    id: string,
+    rating: Rating,
+    askedQuestion: string,
+    now: Date = new Date()
+  ): KnowledgePoint | null {
+    const kp = this.data.knowledgePoints[id];
+    if (!kp) return null;
+    kp.srs = rateSrs(kp.srs, rating, now);
+    kp.currentDepth = nextDepth(kp.currentDepth, kp.targetDepth, rating, kp.srs.reps);
+    kp.recentAsks = [
+      ...kp.recentAsks,
+      { question: askedQuestion, at: now.toISOString() }
+    ].slice(-KP_RECENT_ASKS_CAP);
+    this.persist();
+    return kp;
   }
 
   getStats(): Stats {

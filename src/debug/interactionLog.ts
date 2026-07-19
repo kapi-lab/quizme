@@ -9,7 +9,7 @@ import type { ClaudeEffort } from "../types.js";
  * starts with an empty log.
  */
 
-export type InteractionKind = "quiz" | "why";
+export type InteractionKind = "quiz" | "why" | "extract" | "cards";
 
 export interface Interaction {
   kind: InteractionKind;

@@ -8,6 +8,72 @@ export type ClaudeEffort = "low" | "medium" | "high" | "xhigh" | "max";
 type SourceType = "manual" | "topic" | "repo" | "claude_session";
 export type QuestionSourceMode = "contextual" | "adjacent" | "interview_style";
 
+/** Spaced-repetition rating for a knowledge point after one card is answered. */
+export type Rating = "again" | "hard" | "good" | "easy";
+/** Where a card came from in the round plan: new concept, due review, or weak-area reinforcement. */
+export type CardOrigin = "new" | "review" | "reinforce";
+/** Knowledge depth: 1 awareness, 2 working knowledge, 3 deep understanding. */
+export type KpDepth = 1 | 2 | 3;
+
+export interface SrsState {
+  /** Consecutive successful reviews since the last lapse. */
+  reps: number;
+  /** Total times the KP was forgotten (rated "again"). */
+  lapses: number;
+  /** SM-2 ease factor, clamped to [1.3, 3.0]. */
+  ease: number;
+  /** Current review interval in days. */
+  intervalDays: number;
+  /** ISO timestamp when this KP is next due for review. */
+  dueAt: string;
+  /** null until the KP has been asked at least once. */
+  lastRating: Rating | null;
+}
+
+export interface KpAnchor {
+  sourceType: SourceType;
+  title: string;
+  at: string;
+}
+
+export interface KpAsk {
+  question: string;
+  at: string;
+}
+
+/**
+ * The persistent learning unit. Cards are ephemeral renderings of a KP;
+ * the forgetting curve, depth progression, and history all live here.
+ */
+export interface KnowledgePoint {
+  id: string;
+  /** Canonical kebab-case name, used for dedupe across extractions. */
+  name: string;
+  /** One-sentence transferable takeaway. */
+  essence: string;
+  domain: string[];
+  targetDepth: KpDepth;
+  currentDepth: KpDepth;
+  srs: SrsState;
+  /** Which sessions/repos/topics triggered this KP. */
+  provenance: KpAnchor[];
+  /** Recent question stems asked about this KP — passed to generation to force variation. */
+  recentAsks: KpAsk[];
+  createdAt: string;
+}
+
+/** A knowledge-point candidate produced by the extraction stage, before persistence. */
+export interface KpCandidate {
+  name: string;
+  essence: string;
+  domain: string[];
+  suggestedDepth: KpDepth;
+  /** 0..1 relevance to the user, used to rank candidates when composing a round. */
+  relevance: number;
+  /** The snippet of source context that triggered this KP. */
+  anchor: string;
+}
+
 export interface SourceSummary {
   sourceType: SourceType;
   title: string;
@@ -30,6 +96,14 @@ export interface QuizQuestion {
   explanation: string;
   whyWrong: Record<string, string>;
   tags: string[];
+  /** Card fields (learning-card rounds). Absent on legacy/override questions. */
+  kpId?: string;
+  origin?: CardOrigin;
+  depth?: KpDepth;
+  /** 1–2 sentence scenario grounding the question in the user's context. */
+  anchor?: string;
+  /** One-sentence transferable takeaway shown on the card back. */
+  takeaway?: string;
 }
 
 export interface UserConfig {
@@ -50,6 +124,8 @@ export interface UserConfig {
 export interface AnswerResult {
   selected: string;
   correct: boolean;
+  /** True when the user chose "not sure, show me the answer" instead of guessing. */
+  skipped?: boolean;
 }
 
 export interface WhyTurn {
@@ -130,6 +206,14 @@ export interface Store {
   getProfileSignals(): ProfileSignal[];
   upsertReviewItem(question: QuizQuestion, resolved: boolean): void;
   listReviewQuestions(limit?: number): QuizQuestion[];
+  /** Merge a candidate into the KP store by canonical name; returns the persisted KP. */
+  upsertKnowledgePoint(candidate: KpCandidate, anchor: KpAnchor): KnowledgePoint;
+  getKnowledgePoint(id: string): KnowledgePoint | null;
+  listKnowledgePoints(): KnowledgePoint[];
+  /** KPs due for review (asked before and dueAt <= now), most overdue first. */
+  listDueKnowledgePoints(now?: Date): KnowledgePoint[];
+  /** Apply an SRS rating + depth progression after a card is answered; returns the updated KP. */
+  rateKnowledgePoint(id: string, rating: Rating, askedQuestion: string, now?: Date): KnowledgePoint | null;
   getStats(): Stats;
   /**
    * Wipe all persisted state — config, stats, profile signals, the review
