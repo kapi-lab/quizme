@@ -28,7 +28,7 @@ const sampleQuestion: QuizQuestion = {
   answer: "B",
   explanation: "useCallback returns a memoized callback.",
   whyWrong: { A: "useEffect runs side effects.", C: "useMemo memoizes a value.", D: "useRef holds a ref." },
-  tags: ["react", "hooks"],
+  tags: ["react", "hooks"]
 };
 
 test("config round-trips through JSON", () => {
@@ -68,6 +68,33 @@ test("question bank is in-memory and cleared on demand", () => {
 
   store.clearQuestionBank();
   assert.equal(store.listRecentQuestions(5).length, 0);
+});
+
+test("question cache persists, is consumed once, and matches by signature", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "quizme-test-"));
+  const filePath = path.join(dir, "quizme.json");
+  const store = new JsonStore(filePath);
+  store.init();
+
+  assert.equal(store.hasQuestionCache("sig-a"), false);
+  store.saveQuestionCache([sampleQuestion], "sig-a");
+  assert.equal(store.hasQuestionCache("sig-a"), true);
+
+  // Survives across store instances (unlike the in-memory question bank).
+  const reloaded = new JsonStore(filePath);
+  reloaded.init();
+  assert.equal(reloaded.hasQuestionCache("sig-a"), true);
+
+  // A signature mismatch returns null and discards the stale batch.
+  assert.equal(reloaded.takeQuestionCache("sig-b"), null);
+  assert.equal(reloaded.hasQuestionCache("sig-a"), false);
+
+  // A matching take returns the batch once, then the cache is empty.
+  store.saveQuestionCache([sampleQuestion], "sig-a");
+  const taken = store.takeQuestionCache("sig-a");
+  assert.equal(taken?.length, 1);
+  assert.equal(taken?.[0].id, "q1");
+  assert.equal(store.takeQuestionCache("sig-a"), null);
 });
 
 test("updateSignal clamps and accumulates within [0.05, 0.95]", () => {

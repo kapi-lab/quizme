@@ -25,6 +25,18 @@ export function getAppDataDir(): string {
   return path.join(process.env.XDG_DATA_HOME || path.join(home, ".local", "share"), "quizme");
 }
 
+/**
+ * The data dir `createStore` actually used this process — captures the
+ * `./.quizme` fallback when the platform app-data dir wasn't writable, so a
+ * later debug export reads json files from the real location.
+ */
+let resolvedDataDir: string | undefined;
+
+/** Data dir in use for the current process, or the computed default if the store isn't created yet. */
+export function getResolvedDataDir(): string {
+  return resolvedDataDir ?? getAppDataDir();
+}
+
 export function createStore(): Store {
   let dataDir = getAppDataDir();
   try {
@@ -33,6 +45,7 @@ export function createStore(): Store {
     dataDir = path.join(process.cwd(), ".quizme");
     ensureDir(dataDir);
   }
+  resolvedDataDir = dataDir;
   const store = new JsonStore(path.join(dataDir, "quizme.json"));
   store.init();
   return store;

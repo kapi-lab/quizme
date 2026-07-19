@@ -8,7 +8,7 @@ import {
 } from "../logoLayout.js";
 import { truncate, wrapText } from "../textUtils.js";
 import { theme } from "../theme.js";
-import { formatSourceMode } from "../formatters.js";
+import { formatModelSource, formatSourceMode } from "../formatters.js";
 import { QUIZME_VERSION } from "../../version.js";
 import type { SourceSummary, Stats, UserConfig } from "../../types.js";
 
@@ -29,6 +29,7 @@ function buildFeeds(
 
   const statsFeed: FeedConfig = {
     title: isZh ? "统计" : "Stats",
+    highlightNumbers: true,
     lines: isZh
       ? [
           {
@@ -86,19 +87,22 @@ export function WelcomeBanner({
     ? "将开发上下文转化为面试风格选择题"
     : "Turn your dev context into interview-style quizzes";
   const modeLine = isZh
-    ? `当前模式：${formatSourceMode(source, isZh)}`
+    ? `上下文来源：${formatSourceMode(source, isZh)}`
     : `Source: ${formatSourceMode(source, isZh)}`;
+  const modelLine = formatModelSource(config, isZh);
 
   const titleLine = `QuizMe v${QUIZME_VERSION}`;
 
-  const initialLeftWidth = calculateOptimalLeftWidth(titleLine, tagline, modeLine);
+  const initialLeftWidth = calculateOptimalLeftWidth(titleLine, tagline, modeLine, modelLine);
   const textWidth = Math.max(12, initialLeftWidth - CLAWD_AND_GAP);
   const taglineLines = wrapText(tagline, textWidth);
   const modeLines = wrapText(modeLine, textWidth);
+  const modelLines = wrapText(modelLine, textWidth);
   const optimalLeftWidth = calculateOptimalLeftWidth(
     titleLine,
     ...taglineLines,
-    ...modeLines
+    ...modeLines,
+    ...modelLines
   );
   const { leftWidth, rightWidth, totalWidth } = calculateLayoutDimensions(
     columns,
@@ -122,6 +126,11 @@ export function WelcomeBanner({
       ))}
       {modeLines.map((line, index) => (
         <Text key={`mode-${index}`} dimColor>
+          {line}
+        </Text>
+      ))}
+      {modelLines.map((line, index) => (
+        <Text key={`model-${index}`} dimColor>
           {line}
         </Text>
       ))}

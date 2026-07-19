@@ -24,7 +24,7 @@ QuizMe is a local-first CLI MVP that turns Claude Code session context, reposito
           Generation · prompts + schema + validator + dedupe
                        │  builds a prompt carrying the context
                        ▼
-            ClaudeAgent ─► `claude` CLI  (print mode: --bare --tools "")
+            ClaudeAgent ─► `claude` CLI  (print mode: --safe-mode --tools "")
                        │  returns structured JSON questions
                        ▼
             Storage (quizme.json, atomic temp+rename)
@@ -63,8 +63,6 @@ claude --version   # should print a version number
 
 If not installed, run `npm install -g @anthropic-ai/claude-code`, or see the [Claude Code docs](https://docs.anthropic.com/claude-code).
 
-> No `claude` available? You can still try it offline: `QUIZME_PROVIDER=local`.
-
 ## Usage
 
 ```bash
@@ -90,6 +88,8 @@ On first run you'll be guided to choose a language and level; from the in-app **
 
 > Default `Haiku` + `Low`: question generation is essentially structured JSON output, so Haiku/low is sufficient and noticeably faster and cheaper. Bump it up in Settings when you need higher quality.
 
+The Settings page also has two actions: **Export debug file** writes a self-contained HTML dump (all local JSON plus every `claude` prompt/output of the current session) into the directory you launched from, and **Clear settings & cache** resets local config, stats, profile, review queue, and the prefetch cache.
+
 ### Environment variables
 
 | Variable | Purpose |
@@ -105,8 +105,8 @@ On first run you'll be guided to choose a language and level; from the in-app **
 ## Notes
 
 - Default mode reads the most recent Claude Code transcript for the current repo from `~/.claude/projects`. Stats, archive, settings, and review features are accessible from the interactive main menu.
-- Local data is a single `quizme.json` file in the platform app-data directory, written atomically (temp file + rename). It holds config, stats, profile, and the knowledge-point ledger (with spaced-repetition state); the current round's cards live in memory only and are never persisted.
-- Question generation and `why` mode invoke the local `claude` CLI in print mode (`--bare` + `--tools ""`, agent tools disabled; context is written into the prompt).
+- Local data is a single `quizme.json` file in the platform app-data directory, written atomically (temp file + rename). It holds config, stats, profile, the knowledge-point ledger (with spaced-repetition state), and one background-prefetched question batch; the current round's cards live in memory only and are never persisted.
+- Question generation and `why` mode invoke the local `claude` CLI in print mode (`--safe-mode` + `--tools ""`, agent tools disabled; context is written into the prompt).
 - The offline demo mode (`QUIZME_PROVIDER=local`) serves canned sample cards without touching `claude` — good for a quick tour; card content is static, and review variation plus `why` deep-dives still need the real model.
 
 ## License

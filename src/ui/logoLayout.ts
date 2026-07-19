@@ -1,11 +1,13 @@
+import { displayWidth } from "./textUtils.js";
+
 const MAX_LEFT_WIDTH = 50;
 const BORDER_PADDING = 4;
 const DIVIDER_WIDTH = 1;
 const CONTENT_PADDING = 2;
 
-export type LayoutMode = "horizontal" | "compact";
+type LayoutMode = "horizontal" | "compact";
 
-export type LayoutDimensions = {
+type LayoutDimensions = {
   leftWidth: number;
   rightWidth: number;
   totalWidth: number;
@@ -48,6 +50,6 @@ export function calculateLayoutDimensions(
 }
 
 export function calculateOptimalLeftWidth(...lines: string[]): number {
-  const contentWidth = Math.max(...lines.map((line) => line.length), 20);
+  const contentWidth = Math.max(...lines.map((line) => displayWidth(line)), 20);
   return Math.min(contentWidth + 4, MAX_LEFT_WIDTH);
 }

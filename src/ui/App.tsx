@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { prefetchQuestions } from "../generation/prefetch.js";
 import { HomeScreen } from "./screens/HomeScreen.js";
 import { QuizScreen } from "./screens/QuizScreen.js";
 import { SettingsScreen } from "./screens/SettingsScreen.js";
 import { InfoScreen } from "./screens/InfoScreen.js";
 import { formatProfile, formatStats } from "./formatters.js";
 import { createSoundPlayer } from "./sound.js";
+import { exportDebugFile } from "../debug/exportDebug.js";
 import { normalizeConfig } from "../cli/config.js";
 import type { HomeAction } from "./screens/HomeScreen.js";
 import type { QuizMode, QuizQuestion, SourceSummary, Store, UserConfig } from "../types.js";
@@ -45,6 +47,30 @@ export function App({
       };
     }
   }, [resolveSource]);
+
+  // Warm the question cache in the background so the next `quiz` round starts
+  // instantly. Best-effort and fire-and-forget: skips when a fresh cache
+  // already exists, and swallows the "no source available" case.
+  const warmQuestionCache = useCallback(() => {
+    try {
+      prefetchQuestions({
+        store,
+        config,
+        source: resolveSource({ _: [] }),
+        mode: "mixed",
+        signals: store.getProfileSignals(),
+        recentQuestions: store.listRecentQuestions(20)
+      });
+    } catch {
+      // no Claude sessions to build a source from — nothing to prefetch
+    }
+  }, [store, config, resolveSource]);
+
+  // Prefetch on mount and whenever the config signature changes (a new
+  // signature invalidates the old cache, so a fresh batch is generated).
+  useEffect(() => {
+    warmQuestionCache();
+  }, [warmQuestionCache]);
 
   function startQuiz({
     source,
@@ -103,9 +129,16 @@ export function App({
         source={quizProps.source}
         questionsOverride={quizProps.questionsOverride}
         mode={quizProps.mode}
+        // Refill the moment the round starts (cache consumed), so the next
+        // batch generates during this round instead of after it — only a cold
+        // start can then hit the loading screen.
+        onQuestionsConsumed={warmQuestionCache}
         onDone={() => {
           setQuizProps(null);
           setScreen("home");
+          // Backstop: if the consume-time refill failed (returned no batch),
+          // this retries. No-op when a fresh cache already exists or is in-flight.
+          warmQuestionCache();
         }}
       />
     );
@@ -127,6 +160,7 @@ export function App({
           setConfig(normalizeConfig({}));
           setScreen("home");
         }}
+        onExportDebug={() => exportDebugFile({ config })}
         onBack={() => setScreen("home")}
       />
     );
@@ -135,8 +169,8 @@ export function App({
   if (screen === "stats") {
     return (
       <InfoScreen
-        title="QuizMe Stats"
-        lines={formatStats(store)}
+        title={isZh ? "QuizMe 统计" : "QuizMe Stats"}
+        lines={formatStats(store, isZh)}
         isZh={isZh}
         onBack={() => setScreen("home")}
       />
@@ -146,8 +180,8 @@ export function App({
   if (screen === "profile") {
     return (
       <InfoScreen
-        title="QuizMe Profile"
-        lines={formatProfile(store)}
+        title={isZh ? "QuizMe 画像" : "QuizMe Profile"}
+        lines={formatProfile(store, isZh)}
         isZh={isZh}
         onBack={() => setScreen("home")}
       />

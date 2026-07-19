@@ -7,21 +7,31 @@ import type {
 } from "../../types.js";
 
 /**
+ * First line of every quiz prompt. Distinctive enough to double as a marker:
+ * a transcript containing this string is one of QuizMe's own `claude -p`
+ * calls, so session-context scans skip it instead of reading QuizMe's own
+ * prompt/output back as "recent session" material. See getLatestClaudeSummary.
+ */
+export const QUIZ_PROMPT_MARKER =
+  "You are QuizMe, a CLI technical interview quiz generator for developers.";
+
+/**
  * Static instructional text for quiz generation.
  *
  * This is the part you tune when iterating on quiz quality — keep it
  * decoupled from the dynamic context (signals, recent questions, source)
  * assembled by {@link buildQuizPrompt} below.
  */
-export const QUIZ_PROMPT_INSTRUCTIONS = [
-  "You are QuizMe, a CLI technical interview quiz generator for developers.",
+const QUIZ_PROMPT_INSTRUCTIONS = [
+  QUIZ_PROMPT_MARKER,
+  "Respond immediately with the final JSON. Do not think out loud, plan, or deliberate first — go straight to the answer to keep latency low.",
   "Return strict JSON only, matching the provided schema.",
   "Generate exactly 5 multiple-choice questions with exactly 4 choices (ids A, B, C, D) and exactly one best answer.",
-  "Across the 5 questions, aim for this mix: 2 contextual, 2 adjacent, 1 interview_style.",
   "Every question MUST include a `whyWrong` object with a short reason for each non-answer choice id.",
   "Lean toward questions a well-rounded engineer should genuinely know: underlying principles, technology selection and tradeoffs, comparative distinctions between similar tools or patterns, and debugging / code-review judgment.",
   "Each question in the batch MUST probe a distinct concept — vary the topic, depth, and angle so no two questions read as restatements of each other.",
   "Prefer questions with a spark of intrigue and a clear, transferable takeaway: the reader should learn something concrete, not merely be quizzed. Keep them broadly applicable across teams and codebases.",
+  "Lean toward current, trending topics — and favor the AI / large-language-model space (model capabilities and tradeoffs, prompting, RAG, agents/tool-use, embeddings, evals, fine-tuning vs context, inference cost/latency, and shipping LLM features in production). Still keep the batch varied; don't make every question about AI.",
   "Avoid: vague or ambiguous premises; pure business-logic trivia tied to one app; overly niche implementation details; tedious questions; anything requiring scratch arithmetic or hand-tracing long code; and questions so hard they frustrate instead of teach.",
   "Weight the batch toward the user's weak areas from profile signals below; keep a small share of strong-area questions for positive reinforcement."
 ].join("\n");
@@ -36,7 +46,7 @@ function summarizeSignals(signals: ProfileSignal[]): string {
   const strongest = [...signals].sort((a, b) => b.score - a.score).slice(0, 5);
   const weakest = [...signals]
     .filter((s) => s.wrongCount > 0)
-    .sort((a, b) => a.score - a.score || b.wrongCount - a.wrongCount)
+    .sort((a, b) => a.score - b.score || b.wrongCount - a.wrongCount)
     .slice(0, 5);
   const format = (s: ProfileSignal) =>
     `${s.tag}(score=${s.score.toFixed(2)}, conf=${s.confidence.toFixed(2)}, +${s.correctCount}/-${s.wrongCount})`;
