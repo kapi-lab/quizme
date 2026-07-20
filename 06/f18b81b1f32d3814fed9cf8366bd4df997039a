@@ -1,0 +1,19 @@
+docs/RELEASING.md
+  s_c583ca7120fb2a::t_a9c6daf8d468ba 1-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "06f18b81b1f32d3814fed9cf8366bd4df997039a",
+  "prompts": {},
+  "sessions": {
+    "s_c583ca7120fb2a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "755b4e4e-e1ca-419c-9ba2-6b3fa5278c16",
+        "model": "claude-fable-5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
