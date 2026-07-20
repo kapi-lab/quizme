@@ -1,0 +1,54 @@
+README.zh-CN.md
+  h_cecc0e4bd55260 14
+  s_c583ca7120fb2a::t_4aaef45b233a62 5-7,47,53
+README.md
+  s_c583ca7120fb2a::t_4aaef45b233a62 5-7,47,53
+package.json
+  s_c583ca7120fb2a::t_bf4cc1def89860 2
+  s_c583ca7120fb2a::t_7fada17fd8a1d9 13-16
+  s_10cddb2a353a63::t_528fe986f84fbb 3
+AGENTS.md
+  s_c583ca7120fb2a::t_4aaef45b233a62 80
+.github/workflows/publish.yml
+  s_c583ca7120fb2a::t_dbac5bbc6f38da 1-73
+CHANGELOG.md
+  s_afd125034d5348::t_06fd1017e959ce 63
+  s_afd125034d5348::t_1059d79b753a96 8-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "d190ee054cc6ed9fff62c068e9f6c8c5c2858e7e",
+  "prompts": {},
+  "humans": {
+    "h_cecc0e4bd55260": {
+      "author": "jingyuan <zjingyuan@trip.com>"
+    }
+  },
+  "sessions": {
+    "s_10cddb2a353a63": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97b82ae2-c486-444a-8450-915fea023860",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_afd125034d5348": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ef96b7cf-02af-4139-a7f7-bf9a7c2b8812",
+        "model": "claude-fable-5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    },
+    "s_c583ca7120fb2a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "755b4e4e-e1ca-419c-9ba2-6b3fa5278c16",
+        "model": "claude-fable-5"
+      },
+      "human_author": "jingyuan <zjingyuan@trip.com>"
+    }
+  }
+}
