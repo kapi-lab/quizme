@@ -1,6 +1,6 @@
 {
   "name": "@kapi-lab/quizme",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Interactive CLI quiz practice for developers using Claude Code context.",
   "type": "module",
   "bin": {
