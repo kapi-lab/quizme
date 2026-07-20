@@ -1,0 +1,73 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "tsconfig.build.json"
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "正式版发布：版本递增类型"
+        required: true
+        type: choice
+        default: patch
+        options: [patch, minor, major]
+
+permissions:
+  contents: write # 正式版发布需要推 version commit 和 tag
+  id-token: write # npm Trusted Publishing (OIDC)
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  # push 到 main 自动发 beta；手动触发发正式版
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      # Trusted Publishing 要求 npm >= 11.5
+      - run: npm install -g npm@latest
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - run: npm run build
+
+      - name: Publish beta
+        if: github.event_name == 'push'
+        run: |
+          NEXT=$(node -p "require('./package.json').version.replace(/(\d+)$/, m => +m + 1)")
+          BETA="${NEXT}-beta.$(date -u +%Y%m%d%H%M).${GITHUB_SHA::7}"
+          npm version "$BETA" --no-git-tag-version
+          echo "Publishing $BETA"
+          npm publish --tag beta --provenance
+
+      - name: Publish release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          VERSION=$(npm version "${{ inputs.bump }}" -m "chore(release): v%s")
+          echo "Publishing $VERSION"
+          npm publish --provenance
+          git push origin main --follow-tags
+          gh release create "$VERSION" --title "$VERSION" --generate-notes

@@ -1,6 +1,6 @@
 {
-  "name": "@jiy/quizme",
-  "version": "0.1.2",
+  "name": "@kapi-lab/quizme",
+  "version": "0.2.0",
   "description": "Interactive CLI quiz practice for developers using Claude Code context.",
   "type": "module",
   "bin": {
@@ -10,6 +10,10 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "scripts": {
     "start": "node --import tsx ./src/cli/index.ts",
     "build": "tsc -p tsconfig.build.json",

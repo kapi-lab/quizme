@@ -77,4 +77,4 @@ docs/         product.md, technical.md (Chinese product/design docs)
 
 ## Repo
 
-GitHub: <https://github.com/kapi-lab/quizme> · npm: `@jiy/quizme` · License: MIT
+GitHub: <https://github.com/kapi-lab/quizme> · npm: `@kapi-lab/quizme` · License: MIT

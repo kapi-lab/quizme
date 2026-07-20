@@ -2,16 +2,16 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-[![npm version](https://img.shields.io/npm/v/@jiy/quizme?logo=npm&label=npm)](https://www.npmjs.com/package/@jiy/quizme)
-[![npm downloads](https://img.shields.io/npm/dm/@jiy/quizme?label=downloads)](https://www.npmjs.com/package/@jiy/quizme)
-[![node](https://img.shields.io/node/v/@jiy/quizme?logo=node.js&label=node)](https://www.npmjs.com/package/@jiy/quizme)
+[![npm version](https://img.shields.io/npm/v/@kapi-lab/quizme?logo=npm&label=npm)](https://www.npmjs.com/package/@kapi-lab/quizme)
+[![npm downloads](https://img.shields.io/npm/dm/@kapi-lab/quizme?label=downloads)](https://www.npmjs.com/package/@kapi-lab/quizme)
+[![node](https://img.shields.io/node/v/@kapi-lab/quizme?logo=node.js&label=node)](https://www.npmjs.com/package/@kapi-lab/quizme)
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![GitHub](https://img.shields.io/badge/source-github-black?logo=github)](https://github.com/kapi-lab/quizme)
 
 QuizMe 是一个本地优先的 CLI MVP，将 Claude Code 会话上下文、仓库上下文或用户输入的主题转化为短小的面试风格选择题。
 
 ## 工作原理
-
+·
 ```
  Claude Code 会话记录     仓库上下文           用户输入主题
  (~/.claude/projects)      (--repo .)           ("React ...")
@@ -44,13 +44,13 @@ QuizMe **不直接**调用 Anthropic API，而是以 print 模式调用本机的
 ## 安装
 
 ```bash
-npm install -g @jiy/quizme
+npm install -g @kapi-lab/quizme
 ```
 
 无需全局安装也可直接用 `npx`：
 
 ```bash
-npx @jiy/quizme
+npx @kapi-lab/quizme
 ```
 
 ## 前置条件

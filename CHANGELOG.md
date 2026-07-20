@@ -5,6 +5,27 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-20
+
+### Added
+
+- Knowledge-point learning system: generation now runs as a two-stage pipeline
+  that first extracts knowledge points from your Claude Code context, then
+  renders them into quiz cards.
+- SM-2 spaced-repetition scheduling over stored knowledge-point entities, so
+  what you get quizzed on adapts to your review history.
+- Learning-card quiz flow: the answer screen was rebuilt as a card stream with
+  a per-round summary at the end.
+- Offline demo mode for trying the app without a Claude CLI backend.
+- Design document for the quiz-card learning system.
+
+### Changed
+
+- Body text now follows the terminal's default foreground color.
+- Removed the unimplemented `QUIZME_PROVIDER` environment variable.
+- Updated README and AGENTS docs to reflect knowledge-point storage and the
+  offline demo mode.
+
 ## [0.1.2] - 2026-07-17
 
 ### Added
@@ -39,5 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial published release.
 
+[0.2.0]: https://github.com/kapi-lab/quizme/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/kapi-lab/quizme/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/kapi-lab/quizme/releases/tag/v0.1.1

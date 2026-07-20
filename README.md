@@ -2,9 +2,9 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-[![npm version](https://img.shields.io/npm/v/@jiy/quizme?logo=npm&label=npm)](https://www.npmjs.com/package/@jiy/quizme)
-[![npm downloads](https://img.shields.io/npm/dm/@jiy/quizme?label=downloads)](https://www.npmjs.com/package/@jiy/quizme)
-[![node](https://img.shields.io/node/v/@jiy/quizme?logo=node.js&label=node)](https://www.npmjs.com/package/@jiy/quizme)
+[![npm version](https://img.shields.io/npm/v/@kapi-lab/quizme?logo=npm&label=npm)](https://www.npmjs.com/package/@kapi-lab/quizme)
+[![npm downloads](https://img.shields.io/npm/dm/@kapi-lab/quizme?label=downloads)](https://www.npmjs.com/package/@kapi-lab/quizme)
+[![node](https://img.shields.io/node/v/@kapi-lab/quizme?logo=node.js&label=node)](https://www.npmjs.com/package/@kapi-lab/quizme)
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![GitHub](https://img.shields.io/badge/source-github-black?logo=github)](https://github.com/kapi-lab/quizme)
 
@@ -44,13 +44,13 @@ QuizMe does **not** call the Anthropic API directly. It shells out to your local
 ## Installation
 
 ```bash
-npm install -g @jiy/quizme
+npm install -g @kapi-lab/quizme
 ```
 
 You can also run it directly with `npx` without a global install:
 
 ```bash
-npx @jiy/quizme
+npx @kapi-lab/quizme
 ```
 
 ## Prerequisites
